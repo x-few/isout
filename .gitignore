@@ -50,3 +50,24 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# isshe
+.DS_Store
+.idea/
+.vscode/
+.deps/
+autom4te.cache/
+m4/
+Makefile.in
+Makefile
+config.sub
+config.guess
+config.h.in
+aclocal.m4
+compile
+configure
+depcomp
+install-sh
+ltmain.sh
+missing
+test-driver
