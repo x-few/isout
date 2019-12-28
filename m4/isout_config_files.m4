@@ -8,17 +8,22 @@ AC_DEFUN([ISOUT_CONFIG_FILES],
 
   isout_files="$1"
   isout_opts="$2"
+  save_path=`pwd`
   for isout_file in $isout_files
   do
+    isout_dir=`dirname $isout_file`
+    isout_file="./`basename $isout_file`"
+    cd $isout_dir
     if test -f "$isout_file"; then
-      AC_MSG_NOTICE([ISOUT_CONFIG_FILES: $isout_file "$isout_opts"])
-      $isout_file "$isout_opts"
-      if [ $? -ne 0 ]; then
-        AC_MSG_ERROR([$isout_file "$isout_opts"])
-        exit 1
+      cmd="$isout_file $isout_opts"
+      AC_MSG_NOTICE([running cmd: $cmd])
+      $cmd
+      if test $? -ne 0; then
+        AC_MSG_ERROR([error: $cmd])
       fi
     else
       AC_MSG_ERROR([$isout_file: no such configure file])
     fi
+    cd $save_path
   done
 ])

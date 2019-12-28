@@ -9,16 +9,16 @@ LDADD = \
 	${top_builddir}/lib/libevent/libevent.la
 
 bin_PROGRAMS = \
-	isshe_proxy_server \
-	isshe_socks_parser
+	isshe_proxy_server.out \
+	isshe_socks_parser.out
 
-isshe_proxy_server_SOURCES = \
+isshe_proxy_server_out_SOURCES = \
 	isshe_config_parser.c \
 	isshe_proxy_server.c \
 	isshe_socks_common.c \
 	isshe_socks_protocol.c
 
-isshe_socks_parser_SOURCES = \
+isshe_socks_parser_out_SOURCES = \
 	isshe_socks_parser.c \
 	isshe_config_parser.c \
 	isshe_socks_common.c \
