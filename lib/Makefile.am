@@ -1,0 +1,4 @@
+SUBDIRS = \
+	openssl \
+	libevent \
+	libisshe

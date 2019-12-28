@@ -42,7 +42,9 @@ int isshe_socks_opt_find(uint8_t *buf, uint8_t type)
             return FAILURE;
         }
         i += opt->len + sizeof(opt->len) + sizeof(opt->type);
-    } 
+    }
+
+    return FAILURE;
 }
 
 
