@@ -1,18 +1,17 @@
-#include <stdint.h>
+
+#ifndef _ISSHE_ISOUT_IEVENT_H_
+#define _ISSHE_ISOUT_IEVENT_H_
 
 #include "event2/event.h"
 #include "event2/bufferevent.h"
 #include "event2/buffer.h"
 
-//#include "iconfig.h"
-//#include "iuser.h"
-
-typedef struct 
+struct ievent_s
 {
-    void *in;
-    void *out;
-    void *config;
-    uint64_t flag;
     struct event_base *evbase;
     struct evconnlistener *evlistener;
-}isession_s;
+};
+
+typedef struct ievent_s ievent_t;
+
+#endif

@@ -20,7 +20,7 @@ int isout_opt_append(uint8_t *buf, uint8_t type, uint8_t len, const void *data)
         return ISSHE_FAILURE;
     }
 
-    isout_opt_s *opt = (isout_opt_s *)buf;
+    isout_opt_t *opt = (isout_opt_t *)buf;
     opt->type = type;
     opt->len = len;
     if (len) {
@@ -32,7 +32,7 @@ int isout_opt_append(uint8_t *buf, uint8_t type, uint8_t len, const void *data)
 
 void isout_opt_init_with_end(uint8_t *buf)
 {
-    isout_opt_s opt;
+    isout_opt_t opt;
     
     opt.type = ISOUT_OPT_END;
     opt.len = 0;
@@ -44,12 +44,12 @@ void isout_opt_init_with_end(uint8_t *buf)
 int isout_opt_find(uint8_t *buf, uint8_t type)
 {
     int i;
-    isout_opt_s *opt;
+    isout_opt_t *opt;
     struct isout_opt *opt;
 
     i = 0;
     while(i < ISOUT_ALL_OPT_MAX_LEN) {
-        opt = (isout_opt_s *)(buf + i);
+        opt = (isout_opt_t *)(buf + i);
         if (opt->type == type) {
             return i;
         } else if (opt->type == ISOUT_OPT_END) {
@@ -68,7 +68,7 @@ int isout_opt_find_end(uint8_t *buf)
 
 int isout_opts_len(uint8_t *buf)
 {
-    isout_opt_s opt;
+    isout_opt_t opt;
     return isout_opt_find_end(buf) + sizeof(opt.len) + sizeof(opt.type);
 }
 

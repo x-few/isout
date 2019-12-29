@@ -15,8 +15,10 @@
 #define ISOUT_OPTS_FLAG_ADDR_TYPE   (1 << 3)
 #define ISOUT_OPTS_FLAG_PORT        (1 << 4)
 
+typedef struct isout_conn_opts_s isout_conn_opts_t;
+typedef struct isout_conn_s isout_conn_t;
 
-typedef struct
+struct isout_conn_opts_s
 {
     uint64_t count;     // 计数器，初始化为0
     uint32_t random;    // 随机数, 初始化为0
@@ -28,19 +30,19 @@ typedef struct
     uint8_t dname_len;  // 初始化为0
     uint8_t ipv6_len;   // 初始化为0
     uint16_t user_data_len;  // 用户数据长度
-}isout_conn_opts_s;
+};
 
-typedef struct
+struct isout_conn_s
 {
     int fd;
     int status;
     struct bufferevent *bev;
     struct addrinfo *target_ai;
     uint64_t opts_flag;
-    isout_conn_opts_s opts;
-}isout_connection_s;
+    isout_conn_opts_t opts;
+};
 
 
-int isout_opts_parse(isout_conn_opts_s *opts, uint8_t *opts_str);
+int isout_opts_parse(isout_conn_opts_t *opts, uint8_t *opts_str);
 
 #endif

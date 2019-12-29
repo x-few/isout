@@ -17,6 +17,6 @@ int isout_encode_opts(uint8_t *data, int len);
 
 int isout_encode_data(uint8_t *data, int len);
 
-int isout_encode(isession_s *session);
+int isout_encode(isession_t *session);
 
 #endif

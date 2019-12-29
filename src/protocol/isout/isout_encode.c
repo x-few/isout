@@ -9,7 +9,7 @@
 #include "isshe_aes_cfg128.h"
 
 
-int isout_opts_to_string(uint8_t *buf, isout_conn_opts_s *opts, uint64_t flag)
+int isout_opts_to_string(uint8_t *buf, isout_conn_opts_t *opts, uint64_t flag)
 {
     int i = 0;
 
@@ -103,10 +103,10 @@ int isout_encode_hmac(uint8_t *data, int len, uint8_t *result)
 }
 
 // TODO 性能可能很差！多搞了两次内存复制，以及花了很多内存
-int isout_encode(isession_s *session)
+int isout_encode(isession_t *session)
 {
-    isout_connection_s *outconn = (isout_connection_s *)session->out;
-    isout_connection_s *inconn = (isout_connection_s *)session->in;
+    isout_conn_t *outconn = (isout_conn_t *)session->out;
+    isout_conn_t *inconn = (isout_conn_t *)session->in;
     struct bufferevent *outbev = outconn->bev;
     struct bufferevent *inbev = inconn->bev;
     uint8_t opts[ISOUT_ALL_OPT_MAX_LEN];

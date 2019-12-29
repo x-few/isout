@@ -5,7 +5,7 @@
 #include "isout_protocol.h"
 
 
-void *isout_opts_malloc_copy(isout_opt_s *opt)
+void *isout_opts_malloc_copy(isout_opt_t *opt)
 {
     void *temp = malloc(opt->len);
     if (!temp) {
@@ -17,9 +17,9 @@ void *isout_opts_malloc_copy(isout_opt_s *opt)
     return temp;
 }
 
-int isout_opts_parse(isout_conn_opts_s *opts, uint8_t *opts_str)
+int isout_opts_parse(isout_conn_opts_t *opts, uint8_t *opts_str)
 {
-    isout_opt_s *opt;
+    isout_opt_t *opt;
     int index;
 
     if (!opts || !opts_str) {
@@ -28,7 +28,7 @@ int isout_opts_parse(isout_conn_opts_s *opts, uint8_t *opts_str)
     }
 
     do {
-        opt = (isout_opt_s *)opts_str + index;
+        opt = (isout_opt_t *)opts_str + index;
         switch (opt->type)
         {
         case ISOUT_OPT_COUNT:

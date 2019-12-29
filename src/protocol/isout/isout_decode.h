@@ -3,6 +3,6 @@
 
 #include "isession.h"
 
-int isout_decode(isession_s *session);
+int isout_decode(isession_t *session);
 
 #endif

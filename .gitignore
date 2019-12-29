@@ -82,3 +82,4 @@ config.status
 libtool
 stamp-h1
 configdata.pm
+.dirstamp

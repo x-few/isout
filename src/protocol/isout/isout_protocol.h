@@ -17,11 +17,13 @@
 +------------+----------+----------+
 */
 
-typedef struct {
+typedef struct isout_opt_s isout_opt_t;
+
+struct isout_opt_s{
     uint8_t type;
     uint8_t len;
     uint8_t data[0];
-} isout_opt_s;
+};
 
 typedef enum {
     ISOUT_OPT_COUNT,

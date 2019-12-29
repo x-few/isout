@@ -52,7 +52,7 @@ int isout_decode_opts_block(uint8_t *data, int len, isshe_aes_key_t *key, uint8_
 int isout_decode_opts(struct bufferevent *bev, uint8_t *buf)
 {
     // 一块一块解密，解密完一块，就找找是否存在结束选项标记
-    isout_opt_s *opt;
+    isout_opt_t *opt;
     uint32_t decoded = 0;
     uint32_t checked = 0;
 
@@ -72,7 +72,7 @@ int isout_decode_opts(struct bufferevent *bev, uint8_t *buf)
             decoded += isout_decode_opts_block(buf + decoded, ISSHE_AES_BLOCK_SIZE, &key, ivec, &num);
             continue;
         }
-        opt = (isout_opt_s *)(buf + checked);
+        opt = (isout_opt_t *)(buf + checked);
         checked += sizeof(opt->type) + sizeof(opt->len) + opt->len;
         if (opt->type == ISOUT_OPT_END) {
             return checked;
@@ -83,10 +83,10 @@ int isout_decode_opts(struct bufferevent *bev, uint8_t *buf)
 }
 
 
-int isout_decode(isession_s *session)
+int isout_decode(isession_t *session)
 {
-    isout_connection_s *outconn = (isout_connection_s *)session->out;
-    isout_connection_s *inconn = (isout_connection_s *)session->in;
+    isout_conn_t *outconn = (isout_conn_t *)session->out;
+    isout_conn_t *inconn = (isout_conn_t *)session->in;
     struct bufferevent *outbev = outconn->bev;
     struct bufferevent *inbev = inconn->bev;
     uint8_t opts[ISOUT_ALL_OPT_MAX_LEN];
