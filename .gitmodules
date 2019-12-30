@@ -1,9 +1,9 @@
 [submodule "lib/libevent"]
 	path = lib/libevent
-	url = https://github.com/libevent/libevent.git
+	url = https://github.com/i-sout/libevent.git
 [submodule "lib/libisshe"]
 	path = lib/libisshe
-	url = https://github.com/isshe/libisshe.git
+	url = https://github.com/i-sout/libisshe.git
 [submodule "lib/openssl"]
 	path = lib/openssl
-	url = https://github.com/openssl/openssl.git
+	url = https://github.com/i-sout/openssl.git
