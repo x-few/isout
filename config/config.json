@@ -1,7 +1,49 @@
 {
-    "abc": "bcd",
-    "haha": 123,
-    "bcd": {
-        "ip": "11.111.111.11"
+    "isout": [
+        {
+            "enable": "0/1",
+            "account": "自定义orUUID",
+            "password": "自定义orUUID"
+        }, {}
+    ],
+    "isocks": {
+        "enable": "0/1",
+        "in": [{
+                "port": "",
+                "protocol": ""
+            }, {}
+        ],
+        "out": [{
+                "ip": "",
+                "port": "",
+                "protocol": ""
+            }, {}
+        ]
+    },
+    "iproxy": {
+        "enable": "0/1",
+        "in": [
+            {
+                "port": "",
+                "protocol": ""
+            }, {}
+        ]
+    },
+    "irelay": {
+        "enable": "0/1",
+        "in": [
+            {
+                "ip": "不指定IP则中继所有，指定则需要IP匹配",
+                "port": "",
+                "protocol": ""
+            }, {}
+        ],
+        "out": [
+            {
+                "ip": "",
+                "port": "",
+                "protocol": ""
+            }, {}
+        ]
     }
 }
