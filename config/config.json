@@ -1,49 +1,49 @@
 {
     "isout": [
         {
-            "enable": "0/1",
-            "account": "自定义orUUID",
-            "password": "自定义orUUID"
-        }, {}
+            "enable": 1,
+            "account": "isshe_acc",
+            "password": "isshe_pwd"
+        }
     ],
     "isocks": {
-        "enable": "0/1",
+        "enable": 1,
         "in": [{
-                "port": "",
-                "protocol": ""
-            }, {}
+                "port": "1080",
+                "protocol": "socks5"
+            }
         ],
         "out": [{
-                "ip": "",
-                "port": "",
-                "protocol": ""
-            }, {}
+                "ip": "127.0.0.1",
+                "port": "27758",
+                "protocol": "isout"
+            }
         ]
     },
     "iproxy": {
-        "enable": "0/1",
+        "enable": 1,
         "in": [
             {
-                "port": "",
-                "protocol": ""
-            }, {}
+                "port": "27758",
+                "protocol": "isout"
+            }
         ]
     },
     "irelay": {
-        "enable": "0/1",
+        "enable": 0,
         "in": [
             {
                 "ip": "不指定IP则中继所有，指定则需要IP匹配",
-                "port": "",
-                "protocol": ""
-            }, {}
+                "port": "1234",
+                "protocol": "isout"
+            }
         ],
         "out": [
             {
-                "ip": "",
-                "port": "",
-                "protocol": ""
-            }, {}
+                "ip": "127.0.0.1",
+                "port": "25578",
+                "protocol": "isout"
+            }
         ]
     }
 }
