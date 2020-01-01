@@ -6,35 +6,62 @@
 
 #include "iconfig.h"
 
-
-void iconfig_parse(iconfig_t *conf, const char *file)
+void iconfig_print(iconfig_t *config)
 {
-    isshe_fd_t          fd;
-    ssize_t             len;
-    char                *buf;
-    
-    // 打开文件
-    fd = isshe_open(file, ISSHE_FILE_RDONLY);
+    printf(
+        "-----------------isout config----------------" ISSHE_LINEFEED
+        "config file        : %s" ISSHE_LINEFEED
+        "log file           : %s" ISSHE_LINEFEED
+        ,
+        config->config_file,
+        config->log_file);
+}
 
-    // 读取文件
-    buf = isshe_read_all(fd, &len);
-    if (!buf) {
-        printf("icnfig_parse error: isshe_read_all\n");
-        exit(0);
-    }
-    // 解析json
-    isshe_json_t* json = isshe_json_parse(buf);
-    if (json->type == ISSHE_JSON_NULL) {
-        printf("icnfig_parse error: json parse failed\n");
-        exit(0);
+
+void iconfig_parse(iconfig_t *config, const isshe_char_t *filename)
+{
+    isshe_json_t *json;
+    isshe_char_t *buf;
+
+    // read json
+    json = isshe_read_json(filename);
+
+    // parse config
+    isshe_json_t *log = isshe_json_get_object(json, "log");
+    isshe_json_t *tmp = isshe_json_get_object(log, "filename");
+    if (tmp && tmp->type == ISSHE_JSON_STRING) {
+        isshe_string_mirror(&config->log_file, tmp->vstring, strlen(tmp->vstring));
     }
 
-    isshe_free(buf);
+    // print json
     buf = isshe_json_print(json);
     printf("%s\n", buf);
-
-    isshe_json_delete(json);
     isshe_free(buf);
-    isshe_close(fd);
+
+    // free json
+    isshe_json_delete(json);
+}
+
+iconfig_t *iconfig_new()
+{
+    iconfig_t *config;
+
+    config = (iconfig_t *)isshe_malloc(sizeof(iconfig_t));
+    if (!config) {
+        return NULL;
+    }
+
+    isshe_memzero(config, sizeof(iconfig_t));
+    return config;
+}
+
+void iconfig_free(iconfig_t *config)
+{
+    if (!config) {
+        return ;
+    }
+
+    isshe_free(config->log_file);
+    isshe_free(config);
 }
 
