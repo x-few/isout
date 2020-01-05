@@ -1,12 +1,6 @@
 
 
-
-#include <stdio.h>
-#include <getopt.h>
-
 #include "isout.h"
-#include "iconfig.h"
-#include "isshe_common.h"
 
 void isout_usage_then_exit()
 {
@@ -18,6 +12,12 @@ void isout_usage_then_exit()
     exit(0);
 }
 
+void isout_save_argv(iconfig_t *config,
+    isshe_int_t argc, isshe_char_t *argv[])
+{
+    config->argc = argc;
+    config->argv = argv;
+}
 
 void isout_optget(int argc, char *argv[], iconfig_t *config)
 {
@@ -55,13 +55,15 @@ void isout_optget(int argc, char *argv[], iconfig_t *config)
 int main(int argc, char *argv[])
 {
     // 解析config
-    iconfig_t *config;
+    iconfig_t   *config;
 
     config = iconfig_new();
     if (!config) {
         printf("[error] failed to new config\n");
         exit(0);
     }
+
+    isout_save_argv(config, argc, argv);
 
     isout_optget(argc, argv, config);
 
@@ -70,10 +72,11 @@ int main(int argc, char *argv[])
     iconfig_print(config);
 
     // 配置log
-    //isout_log_init();
+    config->log = ilog_init(config->log_level, config->log_file);
+    ilog_debug(config->log, "test...%d", getpid());
 
     // master接管进程
-    //isout_start_master();
+    imaster_start(config);
 
-    iconfig_free(config);
+    iconfig_free(&config);
 }

@@ -1,7 +1,7 @@
 {
     "log": {
         "level": "debug",
-        "filename": "/tmp/isout.log"
+        "filename_bk": "/tmp/isout.log"
     },
     "isout": [
         {
@@ -10,6 +10,7 @@
             "password": "isshe_pwd"
         }
     ],
+    "enable_roles": ["isocks", "iproxy"],
     "isocks": {
         "enable": 1,
         "in": [{
