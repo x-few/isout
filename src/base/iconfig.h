@@ -9,8 +9,9 @@ typedef struct iconfig_s iconfig_t;
 
 struct iconfig_s
 {
-    isshe_int_t     argc;
-    isshe_char_t    **argv;
+    // TODO delete 20200106
+    //isshe_int_t     argc;
+    //isshe_char_t    **argv;
     isshe_char_t    *config_file;
     isshe_json_t    *config_json;
     isshe_char_t    *log_file;

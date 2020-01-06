@@ -12,12 +12,14 @@ void isout_usage_then_exit()
     exit(0);
 }
 
+/* TODO delete 20200106
 void isout_save_argv(iconfig_t *config,
     isshe_int_t argc, isshe_char_t *argv[])
 {
     config->argc = argc;
     config->argv = argv;
 }
+*/
 
 void isout_optget(int argc, char *argv[], iconfig_t *config)
 {
@@ -63,7 +65,8 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
-    isout_save_argv(config, argc, argv);
+    // TODO delete 20200106
+    //isout_save_argv(config, argc, argv);
 
     isout_optget(argc, argv, config);
 
@@ -74,6 +77,8 @@ int main(int argc, char *argv[])
     // 配置log
     config->log = ilog_init(config->log_level, config->log_file);
     ilog_debug(config->log, "test...%d", getpid());
+
+    isshe_process_title_init(config->log, argc, argv);
 
     // master接管进程
     imaster_start(config);

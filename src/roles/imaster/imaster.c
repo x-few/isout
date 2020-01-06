@@ -13,7 +13,7 @@ void imaster_start(iconfig_t *config)
     imaster_signal_mask(config->log, &set);
 
     // TODO: 设置进程标题
-    isshe_process_title_set("isout: master");
+    isshe_process_title_set("isout: imaster");
 
     imaster_roles_process_init();
     // 起工作进程
@@ -42,7 +42,7 @@ void imaster_start(iconfig_t *config)
             imaster_triggered_signal_del(ISSHE_SIGNAL_TERMINATE);
             // TODO 关闭并回收所有进程
             // TODO 进行清理工作
-            exit(0);
+            break;
         }
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_CHILD)) {
