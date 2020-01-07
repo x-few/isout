@@ -78,7 +78,10 @@ int main(int argc, char *argv[])
     config->log = ilog_init(config->log_level, config->log_file);
     ilog_debug(config->log, "test...%d", getpid());
 
-    isshe_process_title_init(config->log, argc, argv);
+    if (isshe_process_title_init(argc, argv) == ISSHE_FAILURE) {
+        ilog_alert(config->log, "isshe_process_title_init failed");
+        exit(0);
+    }
 
     // master接管进程
     imaster_start(config);
