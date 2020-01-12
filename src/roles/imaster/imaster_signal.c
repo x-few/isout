@@ -29,7 +29,7 @@ void imaster_triggered_signal_add(int signo)
 {
     if (!ismaster_signal_is_triggered(signo)) {
         ilog_t *log = ilog_get();
-        ilog_debug(log, "---isshe---: add signo: %d", signo);
+        //ilog_debug(log, "---isshe---: add signo: %d", signo);
         sigaddset(pit_signals, signo);
     }
 }
@@ -38,20 +38,15 @@ void imaster_triggered_signal_del(int signo)
 {
     if (ismaster_signal_is_triggered(signo)) {
         ilog_t *log = ilog_get();
-        ilog_debug(log, "---isshe---: del signo: %d", signo);
+        //ilog_debug(log, "---isshe---: del signo: %d", signo);
         sigdelset(pit_signals, signo);
-    }
-
-    if (ismaster_signal_is_triggered(signo)) {
-        ilog_t *log = ilog_get();
-        ilog_error(log, "---isshe---: 出大问题，信号还在！(%d)", signo);
     }
 }
 
 void imaster_signal_handler(int signo)
 {
     ilog_t *log = ilog_get();
-    ilog_debug(log, "---isshe---: handler signo = %d", signo);
+    ilog_debug(log, "%d handler signo %d", getpid(), signo);
     imaster_triggered_signal_add(signo);
 
     if (signo == SIGCHLD) {

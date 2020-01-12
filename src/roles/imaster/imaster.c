@@ -29,20 +29,28 @@ void imaster_start(iconfig_t *config)
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_RECONFIGURE)) {
             imaster_triggered_signal_del(ISSHE_SIGNAL_RECONFIGURE);
+            // TODO
         }
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_SHUTDOWN)) {
-            imaster_triggered_signal_del(ISSHE_SIGNAL_SHUTDOWN);
+            //imaster_triggered_signal_del(ISSHE_SIGNAL_SHUTDOWN);
+            ilog_debug(config->log, "triggered ISSHE_SIGNAL_TERMINATE");
         }
 
-        if (ismaster_signal_is_triggered(ISSHE_SIGNAL_INTERRUPT)
-            || ismaster_signal_is_triggered(ISSHE_SIGNAL_TERMINATE)) {
-            
-            imaster_triggered_signal_del(ISSHE_SIGNAL_INTERRUPT);
-            imaster_triggered_signal_del(ISSHE_SIGNAL_TERMINATE);
-            // TODO 关闭并回收所有进程
-            // TODO 进行清理工作
-            break;
+        if (ismaster_signal_is_triggered(ISSHE_SIGNAL_INTERRUPT)) {
+            // TODO 优雅关闭，参考nginx，延时一段时间后，子进程还不退出，就暴力退出。
+            // 触发标记一直保存，直到所有进程退出。
+            //imaster_triggered_signal_del(ISSHE_SIGNAL_INTERRUPT);
+            ilog_debug(config->log, "triggered ISSHE_SIGNAL_KILL");
+            imaster_roles_process_notify(ISSHE_SIGNAL_KILL);
+            if (imaster_roles_process_all_existed()) {
+                break;
+            }
+        }
+
+        if (ismaster_signal_is_triggered(ISSHE_SIGNAL_TERMINATE)) {
+            //imaster_triggered_signal_del(ISSHE_SIGNAL_TERMINATE);
+            ilog_debug(config->log, "triggered ISSHE_SIGNAL_TERMINATE");
         }
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_CHILD)) {

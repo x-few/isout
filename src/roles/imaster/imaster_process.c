@@ -20,6 +20,19 @@ imaster_roles_process_init()
     }
 }
 
+void
+imaster_roles_process_free(isshe_int_t index)
+{
+    imaster_roles_process[index].pid = IMASTER_INVALID_PID;
+    if (imaster_roles_process[index].name
+            && imaster_roles_process[index].name != IMASTER_PROCESS_DEF_NAME) {
+        free(imaster_roles_process[index].name);
+        imaster_roles_process[index].name = NULL;
+    }
+}
+
+
+
 static isshe_int_t imaster_roles_process_find(isshe_pid_t pid)
 {
     isshe_int_t i;
@@ -31,29 +44,34 @@ static isshe_int_t imaster_roles_process_find(isshe_pid_t pid)
     return IMASTER_INVALID_INDEX;
 }
 
+isshe_int_t
+imaster_channel_create()
+{
+    // 新建/设置通讯通道
+    return ISSHE_SUCCESS;
+}
+
 
 isshe_int_t
-imaster_process_spawn(ilog_t *log,
+imaster_process_spawn(ilog_t *log, isshe_char_t *name,
     irole_process_spawn_cb proc,
-    void *ctx, isshe_int_t respawn)
+    void *ctx, isshe_pid_t pid_index)
 {
     isshe_int_t     i;
     isshe_pid_t     pid;
 
-    if (respawn > 0) {
-        // 重启具体某个进程
-        i = respawn;
+    if (pid_index != IMASTER_INVALID_INDEX) {
+        i = pid_index;
     } else {
-        // 新启动
         i = imaster_roles_process_find(IMASTER_INVALID_PID);
         if (i == IMASTER_INVALID_INDEX) {
             ilog_alert(log, "no more than %d processes can be spawned",
                         IMASTER_MAX_ROLES_PROCESS);
             return IMASTER_INVALID_INDEX;
         }
+        // 清零
+        isshe_memzero(&imaster_roles_process[i], sizeof(imaster_process_t));
     }
-
-    // TODO 设置通信管道
 
     pid = fork();
     switch (pid)
@@ -62,22 +80,28 @@ imaster_process_spawn(ilog_t *log,
         return IMASTER_INVALID_INDEX;
     case IMASTER_FORK_CHILD_PID:
         proc(ctx);
-        return IMASTER_INVALID_INDEX;
+        exit(0);    // TODO ?!
     default:
         break;
     }
 
+    if (name) {
+        isshe_size_t len = strlen(name) + 1;
+        imaster_roles_process[i].name = (isshe_char_t *)malloc(len);
+        if (imaster_roles_process[i].name) {
+            isshe_memcpy(imaster_roles_process[i].name, name, len);
+        } else {
+            imaster_roles_process[i].name = IMASTER_PROCESS_DEF_NAME;
+        }
+    }
+
+    imaster_roles_process[i].ctx = ctx;
+    imaster_roles_process[i].proc = proc;
     imaster_roles_process[i].pid = pid;
-    imaster_roles_process[i].exiting = 0;
-
-    switch (respawn)
-    {
-    case IMASTER_PROCESS_RESPAWN:
-        imaster_roles_process[i].respawn = 1;
-        break;
-    default:
-        break;
-    }
+    imaster_roles_process[i].log = log;
+    imaster_roles_process[i].flag.exiting = 0;
+    // 默认重启，不需要的话，调用函数进行处理。
+    imaster_roles_process[i].flag.respawn = 1;
 
     return i;
 }
@@ -118,17 +142,19 @@ imaster_roles_process_start(iconfig_t *config)
             || isshe_memcmp(role->name, jsrole->vstring, len) != 0) {
                 continue;
             }
-            index = imaster_process_spawn(config->log, role->start, 
-                                        config, IMASTER_PROCESS_RESPAWN);
+            index = imaster_process_spawn(config->log, role->name, role->start,
+                                        config, IMASTER_INVALID_INDEX);
             if (index == IMASTER_INVALID_INDEX) {
                 ilog_alert(config->log, "fork() failed while spawning \"%s\"", role->name);
                 continue;
             }
+
             ilog_notice(config->log, "start %s(%d)",
                         role->name, imaster_roles_process[index].pid);
-
-            imaster_roles_process[index].ctx = (void *)config;
             imaster_roles_process[index].role = role;
+
+            // TODO: imaster_channel_create
+            imaster_channel_create();
         }
     }
 
@@ -158,13 +184,28 @@ imaster_process_status_print(ilog_t *log, isshe_int_t index)
     }
 
     if (WEXITSTATUS(status) != IMASTER_PROCESS_NORMAL_EXIT
-        && imaster_roles_process[index].respawn) {
-        imaster_roles_process[index].respawn = 0;
+        && imaster_roles_process[index].flag.respawn) {
+        imaster_roles_process[index].flag.respawn = 0;
         ilog_alert(log, 
             "%s(%d) exited with fatal code %d "
             "and cannot be respawned", 
             name, pid, WEXITSTATUS(status));
     }
+}
+
+isshe_bool_t is_normal_exit(isshe_int_t status)
+{
+    return (isshe_bool_t)WIFEXITED(status);
+}
+
+isshe_bool_t is_terminating()
+{
+    if (ismaster_signal_is_triggered(ISSHE_SIGNAL_SHUTDOWN)
+            || ismaster_signal_is_triggered(ISSHE_SIGNAL_INTERRUPT)
+            || ismaster_signal_is_triggered(ISSHE_SIGNAL_TERMINATE)) {
+        return ISSHE_TRUE;
+    }
+    return ISSHE_FALSE;
 }
 
 void imaster_process_status_get(void)
@@ -209,15 +250,69 @@ void imaster_process_status_get(void)
             continue;
         }
         imaster_roles_process[i].status = status;
-        imaster_roles_process[i].exited = ISSHE_TRUE;
+        imaster_roles_process[i].flag.exited = ISSHE_TRUE;
+        if (is_normal_exit(status) || is_terminating()) {
+            // 正常退出，就不重启了
+            imaster_roles_process[i].flag.respawn = ISSHE_FALSE;
+        }
+
+        if (!imaster_roles_process[i].flag.respawn) {
+            // 回收，给下一个用
+            imaster_roles_process_free(i);
+        }
 
         imaster_process_status_print(log, i);
     }
 }
 
+
 void
 imaster_roles_process_respwan(iconfig_t *config)
 {
+    isshe_int_t i;
+    isshe_pid_t pid;
+
+    for (i = 0; i < IMASTER_MAX_ROLES_PROCESS; i++) {
+        if (imaster_roles_process[i].flag.exited
+                && imaster_roles_process[i].flag.respawn) {
+            if (imaster_process_spawn(config->log,
+                    imaster_roles_process[i].name, imaster_roles_process[i].proc,
+                    imaster_roles_process[i].ctx, i) == IMASTER_INVALID_INDEX) {
+                ilog_alert(config->log, "respawn %s(%d) failed",
+                        imaster_roles_process[i].name,
+                        imaster_roles_process[i].pid);
+                // 继续下一个
+                continue;
+            }
+            ilog_notice(config->log, "respawn %d to %d", pid, imaster_roles_process[i].pid);
+        }
+    }
+}
+
+isshe_int_t imaster_roles_process_notify(isshe_int_t signo)
+{
     // TODO
-    ilog_debug(config->log, "-----respawn!!!-----");
+    // 实现思路：
+    // 1. 先用信号进行简单的通知。
+    // 2. 后续参考nginx或其他开源项目，使用管道/sockpair/...等途径进行通信。可能需要重写替换事件循环模块(libevent)。
+    isshe_int_t i;
+    for (i = 0; i < IMASTER_MAX_ROLES_PROCESS; i++) {
+        if (imaster_roles_process[i].pid != IMASTER_INVALID_PID
+                && !imaster_roles_process[i].flag.exited) {
+            isshe_signal_send(imaster_roles_process[i].pid, signo);
+        }
+    }
+
+    return ISSHE_SUCCESS;
+}
+
+isshe_bool_t imaster_roles_process_all_existed()
+{
+    isshe_int_t i;
+    for (i = 0; i < IMASTER_MAX_ROLES_PROCESS; i++) {
+        if (imaster_roles_process[i].pid != IMASTER_INVALID_PID) {
+            return ISSHE_FALSE;
+        }
+    }
+    return ISSHE_TRUE;
 }
