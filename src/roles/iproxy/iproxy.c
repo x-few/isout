@@ -1,6 +1,5 @@
 
-#include "iproxy.h"
-#include "isession.h"
+#include "isocks.h"
 
 
 void iproxy_left_read_cb(struct bufferevent *bev, void *ctx)
@@ -31,15 +30,20 @@ void iproxy_left_accept_cb(struct evconnlistener *listener,
     evutil_socket_t fd, struct sockaddr *sa, int socklen, void *ctx)
 {
     // TODO xxx = ctx;
+}
+
+void iproxy_start(void *ctx)
+{
+    iconfig_t *config = (iconfig_t *)ctx;
+
+    // TODO 屏蔽信号（需要吗）
+    // TODO 设置进程标题
+    isshe_process_title_set("isout: iproxy");
+    sleep(30);
+
+    // TODO...
+    ilog_debug(config->log, "---in iproxy_start: pid = %d", getpid());
     
-
-    struct isshe_proxy_server_connection *psc = proxy_server_connection_new(ps);
-
-    psc->from_user_conn->bev = isshe_bufferevent_socket_new(ps->evbase, fd);
-    assert(psc->from_user_conn->bev);
-
-    bufferevent_setcb(psc->from_user_conn->bev, 
-        proxy_server_from_user_read_cb, NULL, 
-        proxy_server_from_user_event_cb, (void*)psc);
-    bufferevent_enable(psc->from_user_conn->bev, EV_READ|EV_WRITE);
+    // never return!
+    exit(0);
 }

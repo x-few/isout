@@ -5,6 +5,7 @@ void isocks_start(void *ctx)
 {
     iconfig_t *config = (iconfig_t *)ctx;
 
+    // TODO 屏蔽信号（需要吗）
     // TODO 设置进程标题
     isshe_process_title_set("isout: isocks");
     sleep(30);

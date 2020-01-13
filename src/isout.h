@@ -8,6 +8,7 @@
 #include "imaster.h"
 #include "irole.h"
 #include "isocks.h"
+#include "iproxy.h"
 #include "imaster_process.h"
 #include "imaster_signal.h"
 

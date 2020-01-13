@@ -5,7 +5,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/base \
 	-I$(top_srcdir)/src/roles/imaster \
-	-I$(top_srcdir)/src/roles/isocks
+	-I$(top_srcdir)/src/roles/isocks \
+	-I$(top_srcdir)/src/roles/iproxy
 
 
 LDADD = \
@@ -22,4 +23,5 @@ isout_out_SOURCES = \
 	roles/imaster/imaster_process.c \
 	roles/imaster/imaster_signal.c \
 	roles/imaster/imaster.c \
-	roles/isocks/isocks.c
+	roles/isocks/isocks.c \
+	roles/iproxy/iproxy.c

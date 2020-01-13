@@ -4,6 +4,7 @@
 irole_t imaster_roles[] = 
 {
     { "isocks", isocks_start },
+    { "iproxy", iproxy_start },
     { NULL, NULL },
 };
 
@@ -43,6 +44,7 @@ static isshe_int_t imaster_roles_process_find(isshe_pid_t pid)
     }
     return IMASTER_INVALID_INDEX;
 }
+
 
 isshe_int_t
 imaster_channel_create()

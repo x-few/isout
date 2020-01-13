@@ -43,9 +43,6 @@ void imaster_start(iconfig_t *config)
             //imaster_triggered_signal_del(ISSHE_SIGNAL_INTERRUPT);
             ilog_debug(config->log, "triggered ISSHE_SIGNAL_KILL");
             imaster_roles_process_notify(ISSHE_SIGNAL_KILL);
-            if (imaster_roles_process_all_existed()) {
-                break;
-            }
         }
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_TERMINATE)) {
@@ -56,6 +53,10 @@ void imaster_start(iconfig_t *config)
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_CHILD)) {
             imaster_triggered_signal_del(ISSHE_SIGNAL_CHILD);
             imaster_roles_process_respwan(config);
+        }
+
+        if (imaster_roles_process_all_existed()) {
+            break;
         }
     }
 }

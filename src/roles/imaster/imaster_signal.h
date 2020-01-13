@@ -11,6 +11,7 @@ isshe_bool_t ismaster_signal_is_triggered(int signo);
 void imaster_triggered_signal_add(int signo);
 void imaster_triggered_signal_del(int signo);
 
-void imaster_signal_mask(ilog_t *log, sigset_t *set);
+isshe_int_t imaster_signal_mask(ilog_t *log, sigset_t *set);
+isshe_int_t imaster_signal_unmask(ilog_t *log, sigset_t *set);
 
 #endif

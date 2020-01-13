@@ -70,7 +70,8 @@ isshe_int_t imaster_signal_init(ilog_t *log)
     return ISSHE_SUCCESS;
 }
 
-void imaster_signal_mask(ilog_t *log, sigset_t *set)
+static isshe_int_t
+do_imaster_signal_mask(ilog_t *log, sigset_t *set, isshe_int_t how)
 {
     sigaddset(set, ISSHE_SIGNAL_CHILD);
     sigaddset(set, ISSHE_SIGNAL_ALARM);
@@ -81,7 +82,17 @@ void imaster_signal_mask(ilog_t *log, sigset_t *set)
     sigaddset(set, ISSHE_SIGNAL_TERMINATE);
     sigaddset(set, ISSHE_SIGNAL_SHUTDOWN);
 
-    if (sigprocmask(SIG_BLOCK, set, NULL) == -1) {
+    if (sigprocmask(how, set, NULL) == -1) {
         ilog_alert_errno(log, errno, "sigprocmask() failed");
     }
+}
+
+isshe_int_t imaster_signal_mask(ilog_t *log, sigset_t *set)
+{
+    return do_imaster_signal_mask(log, set, SIG_BLOCK);
+}
+
+isshe_int_t imaster_signal_unmask(ilog_t *log, sigset_t *set)
+{
+    return do_imaster_signal_mask(log, set, SIG_UNBLOCK);
 }
