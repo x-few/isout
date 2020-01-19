@@ -1,4 +1,4 @@
-#include "isout.h"
+#include "imaster_signal.h"
 
 isshe_signal_t imaster_signals[] = {
     { ISSHE_SIGNAL_RECONFIGURE, "SIGHUP", "reload", imaster_signal_handler },
@@ -28,8 +28,6 @@ isshe_bool_t ismaster_signal_is_triggered(int signo)
 void imaster_triggered_signal_add(int signo)
 {
     if (!ismaster_signal_is_triggered(signo)) {
-        ilog_t *log = ilog_get();
-        //ilog_debug(log, "---isshe---: add signo: %d", signo);
         sigaddset(pit_signals, signo);
     }
 }
@@ -37,16 +35,14 @@ void imaster_triggered_signal_add(int signo)
 void imaster_triggered_signal_del(int signo)
 {
     if (ismaster_signal_is_triggered(signo)) {
-        ilog_t *log = ilog_get();
-        //ilog_debug(log, "---isshe---: del signo: %d", signo);
         sigdelset(pit_signals, signo);
     }
 }
 
 void imaster_signal_handler(int signo)
 {
-    ilog_t *log = ilog_get();
-    ilog_debug(log, "%d handler signo %d", getpid(), signo);
+    isshe_log_t *log = isshe_log_instance_get(ISSHE_LOG_NOTICE, NULL);
+    isshe_log_debug(log, "%d handler signo %d", getpid(), signo);
     imaster_triggered_signal_add(signo);
 
     if (signo == SIGCHLD) {
@@ -54,14 +50,14 @@ void imaster_signal_handler(int signo)
     }
 }
 
-isshe_int_t imaster_signal_init(ilog_t *log)
+isshe_int_t imaster_signal_init(isshe_log_t *log)
 {
     isshe_signal_t *sig;
     isshe_memzero(pit_signals, sizeof(sigset_t));
 
     for (sig = imaster_signals; sig->signo != 0; sig++) {
         if (isshe_sigaction(sig->signo, sig->handler) == ISSHE_SIGNAL_ERROR) {
-            ilog_alert(log, "signaction(%d:%s) failed", 
+            isshe_log_alert(log, "signaction(%d:%s) failed", 
                 sig->signo, sig->signame);
             return ISSHE_FAILURE;
         }
@@ -71,7 +67,7 @@ isshe_int_t imaster_signal_init(ilog_t *log)
 }
 
 static isshe_int_t
-do_imaster_signal_mask(ilog_t *log, sigset_t *set, isshe_int_t how)
+do_imaster_signal_mask(isshe_log_t *log, sigset_t *set, isshe_int_t how)
 {
     sigaddset(set, ISSHE_SIGNAL_CHILD);
     sigaddset(set, ISSHE_SIGNAL_ALARM);
@@ -83,16 +79,17 @@ do_imaster_signal_mask(ilog_t *log, sigset_t *set, isshe_int_t how)
     sigaddset(set, ISSHE_SIGNAL_SHUTDOWN);
 
     if (sigprocmask(how, set, NULL) == -1) {
-        ilog_alert_errno(log, errno, "sigprocmask() failed");
+        isshe_log_alert_errno(log, errno, "sigprocmask() failed");
     }
+    return ISSHE_SUCCESS;
 }
 
-isshe_int_t imaster_signal_mask(ilog_t *log, sigset_t *set)
+isshe_int_t imaster_signal_mask(isshe_log_t *log, sigset_t *set)
 {
     return do_imaster_signal_mask(log, set, SIG_BLOCK);
 }
 
-isshe_int_t imaster_signal_unmask(ilog_t *log, sigset_t *set)
+isshe_int_t imaster_signal_unmask(isshe_log_t *log, sigset_t *set)
 {
     return do_imaster_signal_mask(log, set, SIG_UNBLOCK);
 }

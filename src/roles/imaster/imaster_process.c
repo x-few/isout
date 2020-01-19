@@ -1,5 +1,5 @@
 
-#include "isout.h"
+#include "imaster_process.h"
 
 irole_t imaster_roles[] = 
 {
@@ -55,7 +55,7 @@ imaster_channel_create()
 
 
 isshe_int_t
-imaster_process_spawn(ilog_t *log, isshe_char_t *name,
+imaster_process_spawn(isshe_log_t *log, isshe_char_t *name,
     irole_process_spawn_cb proc,
     void *ctx, isshe_pid_t pid_index)
 {
@@ -67,7 +67,7 @@ imaster_process_spawn(ilog_t *log, isshe_char_t *name,
     } else {
         i = imaster_roles_process_find(IMASTER_INVALID_PID);
         if (i == IMASTER_INVALID_INDEX) {
-            ilog_alert(log, "no more than %d processes can be spawned",
+            isshe_log_alert(log, "no more than %d processes can be spawned",
                         IMASTER_MAX_ROLES_PROCESS);
             return IMASTER_INVALID_INDEX;
         }
@@ -124,7 +124,7 @@ imaster_roles_process_start(iconfig_t *config)
     if (!jsroles_array
     || !isshe_json_is_array(jsroles_array)
     || array_len <= 0) {
-        ilog_alert(config->log, "config error: no 'enable_roles' field");
+        isshe_log_alert(config->log, "config error: no 'enable_roles' field");
         return ISSHE_FAILURE;
     }
 
@@ -135,7 +135,7 @@ imaster_roles_process_start(iconfig_t *config)
         || jsrole->type != ISSHE_JSON_STRING
         || strlen(jsrole->vstring) <= 0) {
 
-            ilog_warning(config->log, "config error: 'enable_roles' has invlid role name, ignore...");
+            isshe_log_warning(config->log, "config error: 'enable_roles' has invlid role name, ignore...");
             continue;
         }
         len = strlen(jsrole->vstring);
@@ -147,11 +147,11 @@ imaster_roles_process_start(iconfig_t *config)
             index = imaster_process_spawn(config->log, role->name, role->start,
                                         config, IMASTER_INVALID_INDEX);
             if (index == IMASTER_INVALID_INDEX) {
-                ilog_alert(config->log, "fork() failed while spawning \"%s\"", role->name);
+                isshe_log_alert(config->log, "fork() failed while spawning \"%s\"", role->name);
                 continue;
             }
 
-            ilog_notice(config->log, "start %s(%d)",
+            isshe_log_notice(config->log, "start %s(%d)",
                         role->name, imaster_roles_process[index].pid);
             imaster_roles_process[index].role = role;
 
@@ -165,7 +165,7 @@ imaster_roles_process_start(iconfig_t *config)
 
 
 void
-imaster_process_status_print(ilog_t *log, isshe_int_t index)
+imaster_process_status_print(isshe_log_t *log, isshe_int_t index)
 {
     isshe_pid_t pid = imaster_roles_process[index].pid;
     isshe_char_t *name = imaster_roles_process[index].role->name;
@@ -173,22 +173,22 @@ imaster_process_status_print(ilog_t *log, isshe_int_t index)
 
     if (WTERMSIG(status)) {
 #ifdef WCOREDUMP
-        ilog_alert(log, "%s(%d) exited on signal %d%s", 
+        isshe_log_alert(log, "%s(%d) exited on signal %d%s", 
             name, pid, WTERMSIG(status),
             WCOREDUMP(status) ? " (core dumped)" : "");
 #else
-        ilog_alert(log, "%s(%d) exited on signal %d",
+        isshe_log_alert(log, "%s(%d) exited on signal %d",
             name, pid, WTERMSIG(status));
 #endif
     } else {
-        ilog_notice(log, "%s(%d) exited with code %d", 
+        isshe_log_notice(log, "%s(%d) exited with code %d", 
             name, pid, WEXITSTATUS(status));
     }
 
     if (WEXITSTATUS(status) != IMASTER_PROCESS_NORMAL_EXIT
         && imaster_roles_process[index].flag.respawn) {
         imaster_roles_process[index].flag.respawn = 0;
-        ilog_alert(log, 
+        isshe_log_alert(log, 
             "%s(%d) exited with fatal code %d "
             "and cannot be respawned", 
             name, pid, WEXITSTATUS(status));
@@ -215,13 +215,13 @@ void imaster_process_status_get(void)
     int             status;
     isshe_pid_t     pid;
     isshe_errno_t   errcode;
-    ilog_t          *log;
+    isshe_log_t          *log;
     isshe_int_t     i;
 
-    log = ilog_get();
+    log = isshe_log_instance_get(ISSHE_LOG_NOTICE, NULL);
     while(ISSHE_TRUE) {
         pid = waitpid(-1, &status, WNOHANG);
-        ilog_info(log, "waitpid: pid = %d", pid);
+        isshe_log_info(log, "waitpid: pid = %d", pid);
         if (pid == 0) {
             // no child exit
             return;
@@ -235,11 +235,11 @@ void imaster_process_status_get(void)
             }
 
             if (errcode == ECHILD) {
-                ilog_info_errno(log, errcode, "waitpid() failed");
+                isshe_log_info_errno(log, errcode, "waitpid() failed");
                 return;
             }
 
-            ilog_alert_errno(log, errcode, "waitpid() failed");
+            isshe_log_alert_errno(log, errcode, "waitpid() failed");
             return;
         }
 
@@ -247,7 +247,7 @@ void imaster_process_status_get(void)
         // TODO 找出来，并关闭相关资源
         i = imaster_roles_process_find(pid);
         if (i == IMASTER_INVALID_INDEX) {
-            ilog_alert(log, "(unlikely)can not get exited "
+            isshe_log_alert(log, "(unlikely)can not get exited "
                 "process info: pid = %d.", pid);
             continue;
         }
@@ -280,13 +280,13 @@ imaster_roles_process_respwan(iconfig_t *config)
             if (imaster_process_spawn(config->log,
                     imaster_roles_process[i].name, imaster_roles_process[i].proc,
                     imaster_roles_process[i].ctx, i) == IMASTER_INVALID_INDEX) {
-                ilog_alert(config->log, "respawn %s(%d) failed",
+                isshe_log_alert(config->log, "respawn %s(%d) failed",
                         imaster_roles_process[i].name,
                         imaster_roles_process[i].pid);
                 // 继续下一个
                 continue;
             }
-            ilog_notice(config->log, "respawn %d to %d", pid, imaster_roles_process[i].pid);
+            isshe_log_notice(config->log, "respawn %d to %d", pid, imaster_roles_process[i].pid);
         }
     }
 }

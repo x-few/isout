@@ -3,13 +3,15 @@
 
 #include "isshe_common.h"
 
-#include "iconfig.h"
 #include "ilog.h"
-#include "imaster.h"
+#include "iconnection.h"
+#include "iconfig.h"
 #include "irole.h"
-#include "isocks.h"
-#include "iproxy.h"
+#include "imaster.h"
 #include "imaster_process.h"
 #include "imaster_signal.h"
+#include "isocks.h"
+#include "isocks_config.h"
+#include "iproxy.h"
 
 #endif

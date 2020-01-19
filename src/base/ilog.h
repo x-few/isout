@@ -23,8 +23,8 @@
 #define ilog_info_errno     isshe_log_info_errno
 #define ilog_debug_errno    isshe_log_debug_errno
 
-
-#define ilog_t      isshe_log_t
+typedef isshe_log_t ilog_t;
+//#define ilog_t      isshe_log_t
 
 ilog_t *ilog_init(isshe_uint_t level, isshe_char_t *filename);
 

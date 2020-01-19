@@ -1,4 +1,4 @@
-#include "isout.h"
+#include "imaster.h"
 
 void imaster_start(iconfig_t *config)
 {
@@ -23,9 +23,9 @@ void imaster_start(iconfig_t *config)
     sigemptyset(&set);
     while(ISSHE_TRUE) {
         // 循环检测进程事件及监控工作进程
-        ilog_debug(config->log, "---isshe---: before sigsuspend");
+        isshe_log_debug(config->log, "---isshe---: before sigsuspend");
         sigsuspend(&set);
-        ilog_debug(config->log, "---isshe---: behind sigsuspend");
+        isshe_log_debug(config->log, "---isshe---: behind sigsuspend");
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_RECONFIGURE)) {
             imaster_triggered_signal_del(ISSHE_SIGNAL_RECONFIGURE);
@@ -34,20 +34,20 @@ void imaster_start(iconfig_t *config)
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_SHUTDOWN)) {
             //imaster_triggered_signal_del(ISSHE_SIGNAL_SHUTDOWN);
-            ilog_debug(config->log, "triggered ISSHE_SIGNAL_TERMINATE");
+            isshe_log_debug(config->log, "triggered ISSHE_SIGNAL_TERMINATE");
         }
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_INTERRUPT)) {
             // TODO 优雅关闭，参考nginx，延时一段时间后，子进程还不退出，就暴力退出。
             // 触发标记一直保存，直到所有进程退出。
             //imaster_triggered_signal_del(ISSHE_SIGNAL_INTERRUPT);
-            ilog_debug(config->log, "triggered ISSHE_SIGNAL_KILL");
+            isshe_log_debug(config->log, "triggered ISSHE_SIGNAL_KILL");
             imaster_roles_process_notify(ISSHE_SIGNAL_KILL);
         }
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_TERMINATE)) {
             //imaster_triggered_signal_del(ISSHE_SIGNAL_TERMINATE);
-            ilog_debug(config->log, "triggered ISSHE_SIGNAL_TERMINATE");
+            isshe_log_debug(config->log, "triggered ISSHE_SIGNAL_TERMINATE");
         }
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_CHILD)) {

@@ -12,21 +12,23 @@
     ],
     "enable_roles": ["isocks", "iproxy"],
     "isocks": {
-        "enable": 1,
+        "log": {
+            "level": "debug",
+            "filename": "/tmp/isout_isocks.log"
+        },
         "in": [{
                 "port": "1080",
                 "protocol": "socks5"
             }
         ],
         "out": [{
-                "ip": "127.0.0.1",
+                "addr": "127.0.0.1",
                 "port": "27758",
                 "protocol": "isout"
             }
         ]
     },
     "iproxy": {
-        "enable": 1,
         "in": [
             {
                 "port": "27758",
@@ -35,17 +37,16 @@
         ]
     },
     "irelay": {
-        "enable": 0,
         "in": [
             {
-                "ip": "不指定IP则中继所有，指定则需要IP匹配",
+                "addr": "不指定IP则中继所有，指定则需要IP匹配",
                 "port": "1234",
                 "protocol": "isout"
             }
         ],
         "out": [
             {
-                "ip": "127.0.0.1",
+                "addr": "127.0.0.1",
                 "port": "25578",
                 "protocol": "isout"
             }

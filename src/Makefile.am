@@ -18,10 +18,11 @@ bin_PROGRAMS = \
 
 isout_out_SOURCES = \
 	isout.c \
+	base/iconnection.c \
 	base/iconfig.c \
-	base/ilog.c \
 	roles/imaster/imaster_process.c \
 	roles/imaster/imaster_signal.c \
 	roles/imaster/imaster.c \
+	roles/isocks/isocks_config.c \
 	roles/isocks/isocks.c \
 	roles/iproxy/iproxy.c

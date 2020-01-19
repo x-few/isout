@@ -75,16 +75,17 @@ int main(int argc, char *argv[])
     iconfig_print(config);
 
     // 配置log
-    config->log = ilog_init(config->log_level, config->log_file);
-    ilog_debug(config->log, "test...%d", getpid());
+    config->log = isshe_log_instance_get(config->log_level, config->log_file);
+    isshe_log_debug(config->log, "test...%d", getpid());
 
     if (isshe_process_title_init(argc, argv) == ISSHE_FAILURE) {
-        ilog_alert(config->log, "isshe_process_title_init failed");
+        isshe_log_alert(config->log, "isshe_process_title_init failed");
         exit(0);
     }
 
     // master接管进程
     imaster_start(config);
 
+    isshe_log_instance_free();
     iconfig_free(&config);
 }

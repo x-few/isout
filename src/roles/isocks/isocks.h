@@ -3,6 +3,8 @@
 
 #include "isout.h"
 
+#define ISOCKS_DEFAULT_POOL_SIZE        4096
+
 void isocks_start(void *ctx);
 
 #endif

@@ -38,7 +38,7 @@ struct imaster_process_s {
     void                    *ctx;
     irole_process_spawn_cb  proc;
     irole_t                 *role;
-    ilog_t                  *log;
+    isshe_log_t                  *log;
     isshe_uint_t            respawn_count;
     imaster_process_flag_t  flag;
     // TODO
@@ -48,7 +48,7 @@ struct imaster_process_s {
 
 void imaster_roles_process_init();
 
-isshe_int_t imaster_process_spawn(ilog_t *log, isshe_char_t *name,
+isshe_int_t imaster_process_spawn(isshe_log_t *log, isshe_char_t *name,
     irole_process_spawn_cb proc, void *ctx, isshe_pid_t pid_index);
 
 isshe_int_t imaster_roles_process_start(iconfig_t *config);
