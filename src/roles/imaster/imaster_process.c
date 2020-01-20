@@ -1,6 +1,9 @@
 
-#include "imaster_process.h"
-
+#include "isout.h"
+/*
+#include "iproxy.h"
+#include "isocks.h"
+*/
 irole_t imaster_roles[] = 
 {
     { "isocks", isocks_start },
@@ -101,9 +104,10 @@ imaster_process_spawn(isshe_log_t *log, isshe_char_t *name,
     imaster_roles_process[i].proc = proc;
     imaster_roles_process[i].pid = pid;
     imaster_roles_process[i].log = log;
-    imaster_roles_process[i].flag.exiting = 0;
+    imaster_roles_process[i].flag.exited = ISSHE_FALSE;
+    imaster_roles_process[i].flag.exiting = ISSHE_FALSE;
     // 默认重启，不需要的话，调用函数进行处理。
-    imaster_roles_process[i].flag.respawn = 1;
+    imaster_roles_process[i].flag.respawn = ISSHE_TRUE;
 
     return i;
 }
@@ -221,7 +225,7 @@ void imaster_process_status_get(void)
     log = isshe_log_instance_get(ISSHE_LOG_NOTICE, NULL);
     while(ISSHE_TRUE) {
         pid = waitpid(-1, &status, WNOHANG);
-        isshe_log_info(log, "waitpid: pid = %d", pid);
+        isshe_log_info(log, "waitpid: pid = %d, exit status = %d", pid, status);
         if (pid == 0) {
             // no child exit
             return;
@@ -253,10 +257,11 @@ void imaster_process_status_get(void)
         }
         imaster_roles_process[i].status = status;
         imaster_roles_process[i].flag.exited = ISSHE_TRUE;
-        if (is_normal_exit(status) || is_terminating()) {
+        //if (is_normal_exit(status) || is_terminating()) {
+            // TODO 添加重启限制后，再打开这里。（防止无限重启）
             // 正常退出，就不重启了
             imaster_roles_process[i].flag.respawn = ISSHE_FALSE;
-        }
+        //}
 
         if (!imaster_roles_process[i].flag.respawn) {
             // 回收，给下一个用
@@ -276,7 +281,8 @@ imaster_roles_process_respwan(iconfig_t *config)
 
     for (i = 0; i < IMASTER_MAX_ROLES_PROCESS; i++) {
         if (imaster_roles_process[i].flag.exited
-                && imaster_roles_process[i].flag.respawn) {
+        && imaster_roles_process[i].flag.respawn) {
+            pid = imaster_roles_process[i].pid;
             if (imaster_process_spawn(config->log,
                     imaster_roles_process[i].name, imaster_roles_process[i].proc,
                     imaster_roles_process[i].ctx, i) == IMASTER_INVALID_INDEX) {

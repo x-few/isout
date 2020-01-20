@@ -76,7 +76,6 @@ int main(int argc, char *argv[])
 
     // 配置log
     config->log = isshe_log_instance_get(config->log_level, config->log_file);
-    isshe_log_debug(config->log, "test...%d", getpid());
 
     if (isshe_process_title_init(argc, argv) == ISSHE_FAILURE) {
         isshe_log_alert(config->log, "isshe_process_title_init failed");

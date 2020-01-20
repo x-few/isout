@@ -1,10 +1,7 @@
 #ifndef _ISSHE_ISOUT_ISESSION_H_
 #define _ISSHE_ISOUT_ISESSION_H_
 
-#include <stdint.h>
-
-//#include "ievent.h"
-#include "iconfig.h"
+#include "isout.h"
 
 struct isession_s
 {

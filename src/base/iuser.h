@@ -1,7 +1,7 @@
 #ifndef _ISSHE_ISOUT_IUSER_H_
 #define _ISSHE_ISOUT_IUSER_H_
 
-#include <stdint.h>
+#include "isout.h"
 
 #define IUSER_NAME_PWD_MAX_LEN 32
 

@@ -3,7 +3,7 @@
 #ifndef _ISOUT_ILOG_H_
 #define _ISOUT_ILOG_H_
 
-#include "isshe_common.h"
+#include "isout.h"
 
 #define ilog_emerg      isshe_log_emerg
 #define ilog_alert      isshe_log_alert

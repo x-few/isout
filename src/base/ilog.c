@@ -1,5 +1,5 @@
 
-#include "ilog.h"
+#include "isout.h"
 
 ilog_t *ilog_init(isshe_uint_t level, isshe_char_t *filename)
 {

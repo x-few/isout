@@ -1,4 +1,4 @@
-#include "imaster.h"
+#include "isout.h"
 
 void imaster_start(iconfig_t *config)
 {
@@ -23,9 +23,7 @@ void imaster_start(iconfig_t *config)
     sigemptyset(&set);
     while(ISSHE_TRUE) {
         // 循环检测进程事件及监控工作进程
-        isshe_log_debug(config->log, "---isshe---: before sigsuspend");
         sigsuspend(&set);
-        isshe_log_debug(config->log, "---isshe---: behind sigsuspend");
 
         if (ismaster_signal_is_triggered(ISSHE_SIGNAL_RECONFIGURE)) {
             imaster_triggered_signal_del(ISSHE_SIGNAL_RECONFIGURE);

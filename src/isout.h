@@ -3,10 +3,10 @@
 
 #include "isshe_common.h"
 
-#include "ilog.h"
 #include "iconnection.h"
 #include "iconfig.h"
 #include "irole.h"
+#include "ievent.h"
 #include "imaster.h"
 #include "imaster_process.h"
 #include "imaster_signal.h"

@@ -20,9 +20,9 @@ iconn_protocol_type_get(const isshe_char_t *protocol_str)
     len = strlen(protocol_str);
     for (i = 0; iconn_protocols[i]; i++)
     {
-        if (strlen(iconn_protocols[i]) == len 
+        if (strlen(iconn_protocols[i]) == len
         && isshe_memcmp(iconn_protocols[i], protocol_str, len) == 0) {
-            return i;    
+            return i;
         }
     }
 

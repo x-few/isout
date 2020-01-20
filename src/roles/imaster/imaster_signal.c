@@ -1,4 +1,4 @@
-#include "imaster_signal.h"
+#include "isout.h"
 
 isshe_signal_t imaster_signals[] = {
     { ISSHE_SIGNAL_RECONFIGURE, "SIGHUP", "reload", imaster_signal_handler },

@@ -2,7 +2,6 @@
 #define _ISOUT_ICONFIG_H_
 
 #include "isout.h"
-#include "iconfig.h"
 
 typedef struct iconfig_s iconfig_t;
 
@@ -22,7 +21,8 @@ void iconfig_parse(iconfig_t *conf, const char *file);
 
 isshe_char_t *iconfig_log_parse(isshe_json_t *json, isshe_int_t *level);
 
-isshe_int_t iconfig_connection_parse(isshe_json_t *json, iconnection_t *conn);
+iconnection_t *iconfig_connection_parse(isshe_mempool_t *pool, 
+    isshe_json_t *json_array, isshe_int_t *res_nconn);
 
 iconfig_t *iconfig_new();
 

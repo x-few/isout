@@ -12,21 +12,21 @@
     ],
     "enable_roles": ["isocks", "iproxy"],
     "isocks": {
+        "connpool": 1024,
         "log": {
             "level": "debug",
             "filename": "/tmp/isout_isocks.log"
         },
         "in": [{
-                "port": "1080",
-                "protocol": "socks5"
-            }
-        ],
+            "addr": "0.0.0.0",
+            "port": 1080,
+            "protocol": "socks5"
+        }],
         "out": [{
-                "addr": "127.0.0.1",
-                "port": "27758",
-                "protocol": "isout"
-            }
-        ]
+            "addr": "0.0.0.0",
+            "port": 27758,
+            "protocol": "isout"
+        }]
     },
     "iproxy": {
         "in": [

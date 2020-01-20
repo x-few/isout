@@ -1,5 +1,5 @@
 
-#include "iconfig.h"
+#include "isout.h"
 
 void iconfig_print(iconfig_t *config)
 {
@@ -19,11 +19,10 @@ iconfig_log_parse(isshe_json_t *json, isshe_int_t *level)
 {
     isshe_json_t *log;
     isshe_json_t *tmp;
-    isshe_char_t *filename;
+    isshe_char_t *filename = NULL;
 
-    filename = NULL;
     *level = ISSHE_LOG_NOTICE;
-    
+
     if (!json) {
         return NULL;
     }
@@ -34,7 +33,7 @@ iconfig_log_parse(isshe_json_t *json, isshe_int_t *level)
     }
 
     tmp = isshe_json_get_object(log, "filename");
-    if (tmp && tmp->type == ISSHE_JSON_STRING && strlen(tmp->vstring) > 0) {
+    if (isshe_json_is_string(tmp)) {
         //filename = isshe_strdup(tmp->vstring, strlen(tmp->vstring) + 1);
         filename = tmp->vstring;    // 直接指向，不复制了
     }
@@ -50,42 +49,73 @@ iconfig_log_parse(isshe_json_t *json, isshe_int_t *level)
     return filename;
 }
 
-isshe_int_t
-iconfig_connection_parse(isshe_json_t *json, iconnection_t *conn)
+iconnection_t *
+iconfig_connection_parse(isshe_mempool_t *pool, 
+                        isshe_json_t *json_array,
+                        isshe_int_t *res_nconn)
 {
-    isshe_json_t *tmp;
-    isshe_int_t type;
+    isshe_json_t    *tmp_json;
+    isshe_json_t    *conn_json;
+    iconnection_t   *conn_array;
+    iconnection_t   *conn;
+    isshe_int_t     type;
+    isshe_int_t     n, i;
 
-    if (!conn || !json) {
-        return ISSHE_FAILURE;
+    if (!isshe_json_is_array(json_array)) {
+        isshe_log_alert(pool->log, "parameter error: json is not array");
+        return NULL;
     }
 
-    tmp = isshe_json_get_object(json, "addr");
-    if (!tmp || tmp->type != ISSHE_JSON_STRING) {
-        return ISSHE_FAILURE;
-    }
-    conn->addr_str = tmp->vstring;
-    // TODO 解析类型
-    type = iconn_addr_type_get(conn->addr_str);
-    // TODO 解析成sockaddr
-    if (iconn_addr_pton(conn->addr_str, type, &conn->addr) == ISSHE_FAILURE) {
-        return ISSHE_FAILURE;
+    n = isshe_json_get_array_size(json_array);
+
+    conn_array = isshe_mpalloc(pool, n * sizeof(iconnection_t));
+    if (!conn_array) {
+        isshe_log_alert(pool->log, "malloc connection array failed");
+        return NULL;
     }
 
-    tmp = isshe_json_get_object(json, "port");
-    if (!tmp || tmp->type != ISSHE_JSON_NUMBER) {
-        return ISSHE_FAILURE;
-    }
-    conn->port = (isshe_uint16_t)tmp->vint;
+    for (i = 0; i < n; i++) {
+        conn_json = isshe_json_get_array(json_array, i);
+        if (!conn_json) {
+            isshe_log_alert(pool->log, "get array item failed: index = %d", i);
+            return NULL;
+        }
 
-    tmp = isshe_json_get_object(json, "protocol");
-    if (!tmp || tmp->type != ISSHE_JSON_STRING) {
-        return ISSHE_FAILURE;
-    }
-    conn->protocol_str = tmp->vstring;
-    conn->protocol = iconn_protocol_type_get(conn->protocol_str);
+        conn = &conn_array[i];
 
-    return ISSHE_SUCCESS;
+        tmp_json = isshe_json_get_object(conn_json, "addr");
+        if (!isshe_json_is_string(tmp_json)) {
+            isshe_log_alert(pool->log, "config 'addr' is not string");
+            return NULL;
+        }
+        conn->addr_str = tmp_json->vstring;
+        // TODO 解析类型
+        type = iconn_addr_type_get(conn->addr_str);
+        // TODO 解析成sockaddr
+        if (iconn_addr_pton(conn->addr_str, type, &conn->addr) == ISSHE_FAILURE) {
+            isshe_log_alert(pool->log, "convert addr string to socksaddr failed");
+            return NULL;
+        }
+
+        tmp_json = isshe_json_get_object(conn_json, "port");
+        if (!isshe_json_is_number(tmp_json)) {
+            isshe_log_alert(pool->log, "config 'port' is not number");
+            return NULL;
+        }
+        conn->port = (isshe_uint16_t)(tmp_json->vint);
+
+        tmp_json = isshe_json_get_object(conn_json, "protocol");
+        if (!isshe_json_is_string(tmp_json)) {
+            isshe_log_alert(pool->log, "config 'protocol' is not string");
+            return NULL;
+        }
+        conn->protocol_str = tmp_json->vstring;
+        conn->protocol = iconn_protocol_type_get(conn->protocol_str);
+    }
+
+    *res_nconn = n;
+
+    return conn_array;
 }
 
 

@@ -1,5 +1,5 @@
 
-#include "iproxy.h"
+#include "isout.h"
 
 
 void iproxy_left_read_cb(struct bufferevent *bev, void *ctx)
@@ -45,7 +45,7 @@ void iproxy_start(void *ctx)
     sleep(30);
 
     // TODO...
-    ilog_debug(config->log, "---in iproxy_start: pid = %d", getpid());
+    isshe_log_debug(config->log, "---in iproxy_start: pid = %d", getpid());
     
     // never return!
     exit(0);
