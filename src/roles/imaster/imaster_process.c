@@ -169,6 +169,26 @@ imaster_roles_process_start(iconfig_t *config)
 
 
 void
+imaster_process_print_trace(isshe_log_t *log)
+{
+    void *array[32];
+    size_t size;
+    char **strings;
+    size_t i;
+
+    size = backtrace(array, 32);
+    strings = backtrace_symbols(array, size);
+
+    isshe_log_debug(log, "Obtained %zd stack frames.", size);
+
+    for (i = 0; i < size; i++) {
+        isshe_log_debug(log, "%s", strings[i]);
+    }
+
+    isshe_free(strings, log);
+}
+
+void
 imaster_process_status_print(isshe_log_t *log, isshe_int_t index)
 {
     isshe_pid_t pid = imaster_roles_process[index].pid;
@@ -184,6 +204,7 @@ imaster_process_status_print(isshe_log_t *log, isshe_int_t index)
         isshe_log_alert(log, "%s(%d) exited on signal %d",
             name, pid, WTERMSIG(status));
 #endif
+        //imaster_process_print_trace(log);
     } else {
         isshe_log_notice(log, "%s(%d) exited with code %d", 
             name, pid, WEXITSTATUS(status));
@@ -263,12 +284,12 @@ void imaster_process_status_get(void)
             imaster_roles_process[i].flag.respawn = ISSHE_FALSE;
         //}
 
+        imaster_process_status_print(log, i);
+
         if (!imaster_roles_process[i].flag.respawn) {
             // 回收，给下一个用
             imaster_roles_process_free(i);
         }
-
-        imaster_process_status_print(log, i);
     }
 }
 

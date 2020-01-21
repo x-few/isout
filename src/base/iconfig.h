@@ -21,7 +21,7 @@ void iconfig_parse(iconfig_t *conf, const char *file);
 
 isshe_char_t *iconfig_log_parse(isshe_json_t *json, isshe_int_t *level);
 
-iconnection_t *iconfig_connection_parse(isshe_mempool_t *pool, 
+isshe_connection_t *iconfig_connection_parse(isshe_mempool_t *pool,
     isshe_json_t *json_array, isshe_int_t *res_nconn);
 
 iconfig_t *iconfig_new();

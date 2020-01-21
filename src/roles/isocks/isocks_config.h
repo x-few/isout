@@ -3,21 +3,24 @@
 
 #include "isout.h"
 
-#define ISOCKS_CONFIG_KEY       "isocks"
+#define ISOCKS_CONFIG_KEY               "isocks"
+#define ISOCKS_CONNPOOL_DEFAULT_SIZE    512
 
 typedef struct isocks_config_s isocks_config_t;
 
 struct isocks_config_s
 {
-    iconnection_t   *inarray;
-    iconnection_t   *outarray;
-    isshe_int_t     nin;
-    isshe_int_t     nout;
-    isshe_log_t     *log;
-    isshe_char_t    *log_filename;
-    isshe_int_t     log_level;
-    isshe_mempool_t *mempool;
-    ievent_t        *event;
+    isshe_connection_t  *inarray;
+    isshe_connection_t  *outarray;
+    isshe_int_t         nin;
+    isshe_int_t         nout;
+    isshe_log_t         *log;
+    isshe_char_t        *log_filename;
+    isshe_int_t         log_level;
+    isshe_size_t        connpool_size;
+    isshe_connpool_t    *connpool;
+    isshe_mempool_t     *mempool;
+    ievent_t            *event;
 };
 
 isshe_int_t

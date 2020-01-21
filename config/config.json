@@ -15,7 +15,7 @@
         "connpool": 1024,
         "log": {
             "level": "debug",
-            "filename": "/tmp/isout_isocks.log"
+            "filename_bk": "/tmp/isout_isocks.log"
         },
         "in": [{
             "addr": "0.0.0.0",
