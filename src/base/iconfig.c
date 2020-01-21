@@ -50,7 +50,7 @@ iconfig_log_parse(isshe_json_t *json, isshe_int_t *level)
 }
 
 isshe_connection_t *
-iconfig_connection_parse(isshe_mempool_t *pool, 
+iconfig_connection_parse(isshe_mempool_t *mempool, 
                         isshe_json_t *json_array,
                         isshe_int_t *res_nconn)
 {
@@ -63,22 +63,22 @@ iconfig_connection_parse(isshe_mempool_t *pool,
     struct sockaddr_in  *tmpaddr;
 
     if (!isshe_json_is_array(json_array)) {
-        isshe_log_alert(pool->log, "parameter error: json is not array");
+        isshe_log_alert(mempool->log, "parameter error: json is not array");
         return NULL;
     }
 
     n = isshe_json_get_array_size(json_array);
 
-    conn_array = isshe_mpalloc(pool, n * sizeof(isshe_connection_t));
+    conn_array = isshe_mpalloc(mempool, n * sizeof(isshe_connection_t));
     if (!conn_array) {
-        isshe_log_alert(pool->log, "malloc connection array failed");
+        isshe_log_alert(mempool->log, "malloc connection array failed");
         return NULL;
     }
 
     for (i = 0; i < n; i++) {
         conn_json = isshe_json_get_array(json_array, i);
         if (!conn_json) {
-            isshe_log_alert(pool->log, "get array item failed: index = %d", i);
+            isshe_log_alert(mempool->log, "get array item failed: index = %d", i);
             return NULL;
         }
 
@@ -86,31 +86,37 @@ iconfig_connection_parse(isshe_mempool_t *pool,
 
         tmp_json = isshe_json_get_object(conn_json, "addr");
         if (!isshe_json_is_string(tmp_json)) {
-            isshe_log_alert(pool->log, "config 'addr' is not string");
+            isshe_log_alert(mempool->log, "config 'addr' is not string");
             return NULL;
         }
         conn->addr_text = tmp_json->vstring;
         // TODO 解析类型
         type = isshe_conn_addr_type_get(conn->addr_text);
+
+        conn->sockaddr = isshe_mpalloc(mempool, sizeof(isshe_sockaddr_t));
+        if (!conn->sockaddr) {
+            isshe_log_alert(mempool->log, "mpalloc sockaddr failed");
+            return NULL;
+        }
         // TODO 解析成sockaddr
         if (isshe_conn_addr_pton(conn->addr_text,
-        type, &conn->sockaddr, &conn->socklen) == ISSHE_FAILURE) {
-            isshe_log_alert(pool->log, "convert addr string to socksaddr failed");
+        type, conn->sockaddr, &conn->socklen) == ISSHE_FAILURE) {
+            isshe_log_alert(mempool->log, "convert addr string to socksaddr failed");
             return NULL;
         }
 
         tmp_json = isshe_json_get_object(conn_json, "port");
         if (!isshe_json_is_number(tmp_json)) {
-            isshe_log_alert(pool->log, "config 'port' is not number");
+            isshe_log_alert(mempool->log, "config 'port' is not number");
             return NULL;
         }
         conn->port = (isshe_uint16_t)(tmp_json->vint);
-        tmpaddr = (struct sockaddr_in *)&conn->sockaddr;
+        tmpaddr = (struct sockaddr_in *)conn->sockaddr;
         tmpaddr->sin_port = htons(conn->port);
 
         tmp_json = isshe_json_get_object(conn_json, "protocol");
         if (!isshe_json_is_string(tmp_json)) {
-            isshe_log_alert(pool->log, "config 'protocol' is not string");
+            isshe_log_alert(mempool->log, "config 'protocol' is not string");
             return NULL;
         }
         conn->protocol_text = tmp_json->vstring;

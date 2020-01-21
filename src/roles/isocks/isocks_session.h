@@ -9,7 +9,9 @@ struct isocks_session_s
 {
     isshe_connection_t  *inconn;
     isshe_connection_t  *outconn;
-    ievent_t            *event;
+    //ievent_t            *event;
+    ievent_buffer_t     *inevb;
+    ievent_buffer_t     *outevb;
     isocks_config_t     *config;
 };
 

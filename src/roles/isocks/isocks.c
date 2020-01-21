@@ -3,11 +3,12 @@
 
 void isocks_start(void *ctx)
 {
-    iconfig_t           *all_config = (iconfig_t *)ctx;
-    isshe_log_t         *log = all_config->log;              // 先使用master的log，自己的起来后，再使用自己的。
-    isshe_mempool_t     *mempool;
-    isocks_config_t     *isocks_config;
-    isshe_int_t         i;
+    iconfig_t               *all_config = (iconfig_t *)ctx;
+    isshe_log_t             *log = all_config->log;              // 先使用master的log，自己的起来后，再使用自己的。
+    isshe_mempool_t         *mempool;
+    isocks_config_t         *isocks_config;
+    isshe_int_t             i;
+    ievent_listener_t       *listener;
 
     isshe_log_notice(log, "isocks_start: pid = %d", getpid());
 
@@ -64,17 +65,24 @@ void isocks_start(void *ctx)
     }
 
     for (i = 0; i < isocks_config->nin; i++) {
-        isshe_log_notice(isocks_config->log, "listening: %s:%d",
-            isocks_config->inarray[i].addr_text, isocks_config->inarray[i].port);
-        isshe_debug_print_addr((struct sockaddr *)&isocks_config->inarray[i].sockaddr);        // DEBUG!
+        isshe_log_notice(isocks_config->log,
+            "listening: %s:%d",
+            isocks_config->inarray[i].addr_text,
+            isocks_config->inarray[i].port);
+        isshe_debug_print_addr(
+            (struct sockaddr *)isocks_config->inarray[i].sockaddr,
+            isocks_config->log);        // DEBUG!
 
-        if (ievent_listener_create(isocks_config->event,
-        isocks_event_accept_cb, (void *)isocks_config,
-        &(isocks_config->inarray[i].sockaddr),
-        isocks_config->inarray[i].socklen) == NULL) {
+        listener = ievent_listener_create(isocks_config->event,
+                        isocks_event_accept_cb, (void *)isocks_config,
+                        isocks_config->inarray[i].sockaddr,
+                        isocks_config->inarray[i].socklen);
+        if (!listener) {
             isshe_log_alert(isocks_config->log, "listener create failed");
             goto isocks_error;
         }
+
+        isocks_config->inarray[i].data = (void *)listener;
     }
 
     ievent_dispatch(isocks_config->event);

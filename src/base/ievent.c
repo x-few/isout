@@ -12,16 +12,14 @@ ievent_create(isshe_mempool_t *mempool, isshe_log_t *log)
         return NULL;
     }
 
-    event->evbase = event_base_new();
-    if (!event->evbase) {
+    event->base = event_base_new();
+    if (!event->base) {
         isshe_log_alert(log, "new event base failed");
         return NULL;
     }
 
     event->nlistener = 0;
     event->listeners = NULL;
-    //event->listeners->listener = NULL;
-    //event->listeners->next = NULL;
     event->mempool = mempool;
     event->log = log;
 
@@ -45,8 +43,8 @@ ievent_destroy(ievent_t *event)
     event->listeners = NULL;
     event->nlistener = 0;
 
-    event_base_free(event->evbase);
-    event->evbase = NULL;
+    event_base_free(event->base);
+    event->base = NULL;
     
     isshe_mpfree(event->mempool, event, sizeof(ievent_t));
 }
@@ -64,7 +62,7 @@ ievent_listener_create(ievent_t *event,
         return NULL;
     }
 
-    listener->listener = evconnlistener_new_bind(event->evbase, cb, data,
+    listener->listener = evconnlistener_new_bind(event->base, cb, data,
         LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1, 
         (struct sockaddr *)addr, socklen);
 
@@ -117,5 +115,31 @@ ievent_listener_destroy(ievent_t *event, ievent_listener_t *listener)
 isshe_int_t
 ievent_dispatch(ievent_t *event)
 {
-    return event_base_dispatch(event->evbase);
+    return event_base_dispatch(event->base);
 }
+
+isshe_int_t
+ievent_connection_close(isshe_socket_t fd)
+{
+    // TODO accept之后应该怎么关闭？bev要不要释放？！
+    return evutil_closesocket(fd);
+}
+
+
+ievent_buffer_t *
+ievent_buffer_socket_create(ievent_t *event, ievent_socket_t fd)
+{
+    ievent_buffer_t *evb;
+    evb = bufferevent_socket_new(event->base, fd,
+            BEV_OPT_CLOSE_ON_FREE|BEV_OPT_DEFER_CALLBACKS);
+
+    return evb;
+}
+
+
+void
+ievent_buffer_socket_destroy(ievent_buffer_t * evb)
+{
+    // TODO
+}
+

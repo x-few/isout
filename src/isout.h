@@ -12,7 +12,10 @@
 #include "imaster_signal.h"
 #include "isocks.h"
 #include "isocks_config.h"
+#include "isocks_session.h"
 #include "isocks_event.h"
 #include "iproxy.h"
+
+
 
 #endif
