@@ -7,15 +7,17 @@
 #include "event2/buffer.h"
 #include "event2/listener.h"
 
-#define ievent_conn_listener_cb_t   evconnlistener_cb
-#define ievent_socket_t             evutil_socket_t
+#define ievent_conn_listener_cb_t       evconnlistener_cb
+#define ievent_socket_t                 evutil_socket_t
+#define ievent_buffer_event_data_cb_t   bufferevent_data_cb
+#define ievent_buffer_event_event_cb_t  bufferevent_event_cb
 
 typedef struct event_base ievent_base_t;
 typedef struct evconnlistener ievent_conn_listener_t;
 typedef struct ievent_s ievent_t;
 typedef struct ievent_listener_s ievent_listener_t;
 
-typedef struct bufferevent ievent_buffer_t;
+typedef struct bufferevent ievent_buffer_event_t;
 
 struct ievent_listener_s
 {
@@ -46,9 +48,24 @@ isshe_int_t ievent_dispatch(ievent_t *event);
 
 isshe_int_t ievent_connection_close(isshe_socket_t fd);
 
-ievent_buffer_t *ievent_buffer_socket_create(
+ievent_buffer_event_t *ievent_buffer_event_socket_create(
     ievent_t *event, ievent_socket_t fd);
 
-void ievent_buffer_socket_destroy(ievent_buffer_t * evb);
+void ievent_buffer_event_socket_destroy(ievent_buffer_event_t * evb);
+
+isshe_int_t ievent_buffer_event_socket_connect(ievent_buffer_event_t *evb,
+    isshe_sockaddr_t *sockaddr, isshe_socklen_t socklen);
+
+void
+ievent_buffer_event_setcb(ievent_buffer_event_t *bev,
+    ievent_buffer_event_data_cb_t readcb,
+    ievent_buffer_event_data_cb_t writecb,
+    ievent_buffer_event_event_cb_t eventcb, void *cbarg);
+
+
+int
+ievent_buffer_event_enable(ievent_buffer_event_t *bev, isshe_int_t event);
+
+
 
 #endif

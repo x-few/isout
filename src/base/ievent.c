@@ -126,20 +126,44 @@ ievent_connection_close(isshe_socket_t fd)
 }
 
 
-ievent_buffer_t *
-ievent_buffer_socket_create(ievent_t *event, ievent_socket_t fd)
+ievent_buffer_event_t *
+ievent_buffer_event_socket_create(ievent_t *event, ievent_socket_t fd)
 {
-    ievent_buffer_t *evb;
-    evb = bufferevent_socket_new(event->base, fd,
+    ievent_buffer_event_t *bev;
+    bev = bufferevent_socket_new(event->base, fd,
             BEV_OPT_CLOSE_ON_FREE|BEV_OPT_DEFER_CALLBACKS);
 
-    return evb;
+    return bev;
 }
 
 
 void
-ievent_buffer_socket_destroy(ievent_buffer_t * evb)
+ievent_buffer_event_socket_destroy(ievent_buffer_event_t * bev)
 {
     // TODO
 }
 
+isshe_int_t
+ievent_buffer_event_socket_connect(ievent_buffer_event_t *bev,
+    isshe_sockaddr_t *sockaddr, isshe_socklen_t socklen)
+{
+    return bufferevent_socket_connect(bev,
+        (struct sockaddr*)sockaddr, socklen);
+}
+
+
+void
+ievent_buffer_event_setcb(ievent_buffer_event_t *bev,
+    ievent_buffer_event_data_cb_t readcb,
+    ievent_buffer_event_data_cb_t writecb,
+    ievent_buffer_event_event_cb_t eventcb, void *cbarg)
+{
+    bufferevent_setcb(bev, readcb, writecb, eventcb, cbarg);
+}
+
+
+int
+ievent_buffer_event_enable(ievent_buffer_event_t *bev, isshe_int_t event)
+{
+    return bufferevent_enable(bev, (short)event);
+}
