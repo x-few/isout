@@ -24,6 +24,8 @@ isout_out_SOURCES = \
 	roles/imaster/imaster_signal.c \
 	roles/imaster/imaster.c \
 	roles/isocks/isocks_config.c \
+	roles/isocks/isocks_socks5.c \
 	roles/isocks/isocks_event.c \
+	roles/isocks/isocks_session.c \
 	roles/isocks/isocks.c \
 	roles/iproxy/iproxy.c

@@ -162,8 +162,57 @@ ievent_buffer_event_setcb(ievent_buffer_event_t *bev,
 }
 
 
-int
+isshe_int_t
 ievent_buffer_event_enable(ievent_buffer_event_t *bev, isshe_int_t event)
 {
     return bufferevent_enable(bev, (short)event);
+}
+
+isshe_int_t
+ievent_buffer_event_disable(ievent_buffer_event_t *bev, isshe_int_t event)
+{
+    return bufferevent_disable(bev, (short)event);
+}
+
+ievent_buffer_t *
+ievent_buffer_event_get_input(ievent_buffer_event_t *bev)
+{
+	return bufferevent_get_input(bev);
+}
+
+ievent_buffer_t *
+ievent_buffer_event_get_output(ievent_buffer_event_t *bev)
+{
+	return bufferevent_get_output(bev);
+}
+
+isshe_size_t
+ievent_buffer_get_length(const ievent_buffer_t *buffer)
+{
+    return evbuffer_get_length(buffer);
+}
+
+isshe_size_t
+ievent_buffer_event_read(ievent_buffer_event_t *bev, void *data, isshe_size_t size)
+{
+    return bufferevent_read(bev, data, size);
+}
+
+isshe_int_t
+ievent_buffer_event_write(ievent_buffer_event_t *bev, const void *data, size_t size)
+{
+    return bufferevent_write(bev, data, size);
+}
+
+isshe_socket_t
+ievent_buffer_event_getfd(ievent_buffer_event_t *bev)
+{
+    return bufferevent_getfd(bev);
+}
+
+
+void
+ievent_buffer_event_free(ievent_buffer_event_t *bev)
+{
+    bufferevent_free(bev);
 }

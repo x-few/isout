@@ -1,7 +1,7 @@
 #ifndef _ISOUT_ISOCKS_CONFIG_H_
 #define _ISOUT_ISOCKS_CONFIG_H_
 
-#include "isout.h"
+#include "isocks.h"
 
 #define ISOCKS_CONFIG_KEY               "isocks"
 #define ISOCKS_CONNPOOL_DEFAULT_SIZE    512

@@ -12,12 +12,13 @@
 #define ievent_buffer_event_data_cb_t   bufferevent_data_cb
 #define ievent_buffer_event_event_cb_t  bufferevent_event_cb
 
-typedef struct event_base ievent_base_t;
-typedef struct evconnlistener ievent_conn_listener_t;
-typedef struct ievent_s ievent_t;
-typedef struct ievent_listener_s ievent_listener_t;
+typedef struct event_base           ievent_base_t;
+typedef struct evconnlistener       ievent_conn_listener_t;
+typedef struct bufferevent          ievent_buffer_event_t;
+typedef struct evbuffer             ievent_buffer_t;
 
-typedef struct bufferevent ievent_buffer_event_t;
+typedef struct ievent_listener_s    ievent_listener_t;
+typedef struct ievent_s             ievent_t;
 
 struct ievent_listener_s
 {
@@ -63,9 +64,31 @@ ievent_buffer_event_setcb(ievent_buffer_event_t *bev,
     ievent_buffer_event_event_cb_t eventcb, void *cbarg);
 
 
-int
+isshe_int_t
 ievent_buffer_event_enable(ievent_buffer_event_t *bev, isshe_int_t event);
 
+isshe_int_t
+ievent_buffer_event_disable(ievent_buffer_event_t *bev, isshe_int_t event);
 
+ievent_buffer_t *
+ievent_buffer_event_get_input(ievent_buffer_event_t *bufev);
+
+ievent_buffer_t *
+ievent_buffer_event_get_output(ievent_buffer_event_t *bev);
+
+isshe_size_t
+ievent_buffer_get_length(const ievent_buffer_t *buffer);
+
+isshe_size_t
+ievent_buffer_event_read(ievent_buffer_event_t *bev, void *data, isshe_size_t size);
+
+isshe_int_t
+ievent_buffer_event_write(ievent_buffer_event_t *bev, const void *data, size_t size);
+
+isshe_socket_t
+ievent_buffer_event_getfd(ievent_buffer_event_t *bev);
+
+void
+ievent_buffer_event_free(ievent_buffer_event_t *bev);
 
 #endif

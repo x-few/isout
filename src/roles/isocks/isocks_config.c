@@ -1,6 +1,6 @@
 
 
-#include "isout.h"
+#include "isocks.h"
 
 isshe_int_t
 isocks_config_parse(isocks_config_t *config, isshe_json_t *json, isshe_log_t *log)

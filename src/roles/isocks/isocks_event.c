@@ -1,27 +1,145 @@
-#include "isout.h"
+#include "isocks.h"
+
+
+isshe_int_t
+isocks_event_transfer_data(ievent_buffer_event_t *srcbev,
+    ievent_buffer_event_t *dstbev, isshe_log_t *log)
+{
+    ievent_buffer_t *src, *dst;
+
+    src = ievent_buffer_event_get_input(srcbev);
+    dst = ievent_buffer_event_get_output(dstbev);
+
+    isshe_log_debug(log, "transfer: %p(%u) -> %p(%lu)",
+        srcbev, ievent_buffer_get_length(src),
+        dstbev, ievent_buffer_get_length(dst));
+
+    evbuffer_add_buffer(dst, src);
+
+    return ISSHE_SUCCESS;
+}
 
 void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
-    
+    isocks_session_t    *session = (isocks_session_t *)ctx;
+    isshe_connection_t  *inconn;
+    isshe_log_t         *log;
+
+    log = session->config->log;
+
+    inconn = session->inconn;
+    switch (inconn->status)
+    {
+    case SOCKS5_STATUS_CONNECTED:
+        // TODO 加密、转发到out
+        //sisshe_log_debug(log, "sock5 connected!!!");
+        isocks_event_transfer_data(session->inbev, session->outbev, log);
+        break;
+    case SOCKS5_STATUS_WAITING_SELECTION:
+        if (socks5_selction_message_process(bev, log) == ISSHE_FAILURE) {
+            // TODO free fd
+            return;
+        }
+        inconn->status = SOCKS5_STATUS_WAITING_REQUEST;
+        break;
+    case SOCKS5_STATUS_WAITING_REQUEST:
+        if (socks5_request_process(bev, session->inconn,
+        log, &session->socks5) == ISSHE_FAILURE) {
+            // TODO free fd
+            return;
+        }
+        inconn->status = SOCKS5_STATUS_CONNECTED;
+        break;
+    default:
+        break;
+    }
 }
 
 
 void isocks_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
+    isocks_session_t *session = (isocks_session_t *)ctx;
+    isshe_log_t         *log;
 
+    log = session->config->log;
+
+    // 读取、解密
+
+    // 转发到in
+    isocks_event_transfer_data(session->outbev, session->inbev, log);
 }
 
 
 void isocks_event_in_event_cb(
     ievent_buffer_event_t *bev, short what, void *ctx)
 {
+    isocks_session_t        *session = (isocks_session_t *)ctx;
+    isshe_log_t             *log;
+    ievent_buffer_event_t   *partner;
+    isshe_size_t            len;
 
+    log = session->config->log;
+    partner = session->outbev;
+
+    assert(bev == session->inbev);
+
+	if (what & (BEV_EVENT_EOF|BEV_EVENT_ERROR)) {
+        if (what & BEV_EVENT_ERROR) {
+            if (errno) {
+                isshe_log_alert_errno(log, errno, "in connection error");
+            }
+        }
+
+        if (partner) {
+            // 把所有数据读出来，发给partner
+            isocks_event_in_read_cb(bev, ctx);
+            len = ievent_buffer_get_length(ievent_buffer_event_get_output(partner));
+            if (len) {
+                ievent_buffer_event_disable(partner, EV_READ);
+            } else {
+                // free partner
+                isocks_session_free(session, ISOCKS_SESSION_FREE_OUT);
+            }
+        }
+
+        isocks_session_free(session, ISOCKS_SESSION_FREE_IN);
+    }
 }
 
 void isocks_event_out_event_cb(
     ievent_buffer_event_t *bev, short what, void *ctx)
 {
+    isocks_session_t        *session = (isocks_session_t *)ctx;
+    isshe_log_t             *log;
+    ievent_buffer_event_t   *partner;
+    isshe_size_t            len;
 
+    log = session->config->log;
+    partner = session->inbev;
+
+    assert(bev == session->outbev);
+
+	if (what & (BEV_EVENT_EOF|BEV_EVENT_ERROR)) {
+        if (what & BEV_EVENT_ERROR) {
+            if (errno) {
+                isshe_log_alert_errno(log, errno, "out connection error");
+            }
+        }
+
+        if (partner) {
+            // 把所有数据读出来，发给partner
+            isocks_event_out_read_cb(bev, ctx);
+            len = ievent_buffer_get_length(ievent_buffer_event_get_output(partner));
+            if (len) {
+                ievent_buffer_event_disable(partner, EV_READ);
+            } else {
+                // free partner
+                isocks_session_free(session, ISOCKS_SESSION_FREE_IN);
+            }
+        }
+
+        isocks_session_free(session, ISOCKS_SESSION_FREE_OUT);
+    }
 }
 
 
@@ -89,8 +207,7 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
         isshe_log_alert(config->log, "get inbound connection failed");
         goto isocks_event_accept_error;
     }
-    //session->inconn->fd = fd;
-
+    
     session->outconn = isshe_connection_get(config->connpool);
     if (!session->outconn) {
         isshe_log_alert(config->log, "get outbound connection failed");
@@ -98,8 +215,8 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
     }
 
     // new bufferevent
-    session->inevb = ievent_buffer_event_socket_create(config->event, fd);
-    session->outevb = ievent_buffer_event_socket_create(config->event, ISSHE_INVALID_FILE);
+    session->inbev = ievent_buffer_event_socket_create(config->event, fd);
+    session->outbev = ievent_buffer_event_socket_create(config->event, ISSHE_INVALID_FILE);
 
     // 选择下一跳信息
     out_conn = isocks_event_select_next(config->outarray, config->nout);
@@ -108,25 +225,32 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
         goto isocks_event_accept_error;
     }
 
-    // 连接下一跳（出口）
-    if (isocks_event_connect_to_next(session->outevb,
-        session->outconn, out_conn->sockaddr,
-        out_conn->socklen, config->log) == ISSHE_FAILURE) {
-            isshe_log_alert(config->log, "connect to next failed");
-            goto isocks_event_accept_error;
-        }
+    // 连接下一跳（出口）。NOTE：共用了sockaddr。
+    if (isocks_event_connect_to_next(session->outbev,
+    session->outconn, out_conn->sockaddr,
+    out_conn->socklen, config->log) == ISSHE_FAILURE) {
+        isshe_log_alert(config->log, "connect to next failed");
+        goto isocks_event_accept_error;
+    }
 
     // 设置入口回调，读取数据
     // 设置出口回调
+    session->mempool = mempool;
+    session->config = config;
+    session->inconn->fd = fd;
     session->inconn->data = (void *)session;
+    session->inconn->status = SOCKS5_STATUS_WAITING_SELECTION;
+    session->inconn->mempool = mempool;
+    session->outconn->fd = ievent_buffer_event_getfd(session->outbev);
+    session->outconn->mempool = mempool;
     session->outconn->data = (void *)session;
-    bufferevent_setcb(session->inevb, isocks_event_in_read_cb, 
-        NULL, isocks_event_in_event_cb, (void*)session->outconn);
-    bufferevent_enable(session->inevb, EV_READ|EV_WRITE);
 
-    bufferevent_setcb(session->outevb, isocks_event_out_read_cb, 
-        NULL, isocks_event_out_event_cb, (void*)session->inconn);
-    bufferevent_enable(session->outevb, EV_READ|EV_WRITE);
+    ievent_buffer_event_setcb(session->inbev, isocks_event_in_read_cb, 
+        NULL, isocks_event_in_event_cb, (void*)session); //->outconn);
+    ievent_buffer_event_enable(session->inbev, EV_READ|EV_WRITE);
+    ievent_buffer_event_setcb(session->outbev, isocks_event_out_read_cb, 
+        NULL, isocks_event_out_event_cb, (void*)session); //->inconn);
+    ievent_buffer_event_enable(session->outbev, EV_READ|EV_WRITE);
 
     return;
 
