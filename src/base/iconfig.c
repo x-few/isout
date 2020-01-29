@@ -151,7 +151,7 @@ void iconfig_parse(iconfig_t *config, const isshe_char_t *filename)
     config->config_json = json;
 }
 
-iconfig_t *iconfig_new()
+iconfig_t *iconfig_create()
 {
     iconfig_t *config;
 
@@ -165,7 +165,7 @@ iconfig_t *iconfig_new()
 }
 
 
-void iconfig_free(iconfig_t **pconfig)
+void iconfig_destroy(iconfig_t **pconfig)
 {
     iconfig_t *config = *pconfig;
     if (!config) {

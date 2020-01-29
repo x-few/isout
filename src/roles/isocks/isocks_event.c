@@ -19,6 +19,40 @@ isocks_event_transfer_data(ievent_buffer_event_t *srcbev,
     return ISSHE_SUCCESS;
 }
 
+isshe_int_t
+isocks_event_in_transfer_data(isocks_session_t *sessoin)
+{
+    isshe_char_t    *stropts = NULL;
+    isshe_size_t    stropts_len = 0;
+
+    // TODO 设置options
+
+    // 生成OPTION字符串
+    if (session->outopts) {
+        stropts = isout_options_to_string(session->outopts, session->mempool, &stropts_len);
+        if (!stropts) {
+            isshe_log_warning(log, "options to string failed");
+            return ISSHE_FAILURE;
+        }
+    }
+
+    if (stropts && stropts_len != 0) {
+        ievent_buffer_event_write(session->outbev, stropts, stropts_len);
+    }
+
+    // TODO 加密
+    
+    // 转发到out
+    isocks_event_transfer_data(session->inbev, session->outbev, session->config->log);
+}
+
+
+isshe_int_t
+isocks_event_out_transfer_data(isocks_session_t *sessoin)
+{
+
+}
+
 void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
     isocks_session_t    *session = (isocks_session_t *)ctx;
@@ -31,9 +65,7 @@ void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
     switch (inconn->status)
     {
     case SOCKS5_STATUS_CONNECTED:
-        // TODO 加密、转发到out
-        //sisshe_log_debug(log, "sock5 connected!!!");
-        isocks_event_transfer_data(session->inbev, session->outbev, log);
+        isocks_event_in_transfer_data(session);
         break;
     case SOCKS5_STATUS_WAITING_SELECTION:
         if (socks5_selction_message_process(bev, log) == ISSHE_FAILURE) {
@@ -66,7 +98,7 @@ void isocks_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
     // 读取、解密
 
     // 转发到in
-    isocks_event_transfer_data(session->outbev, session->inbev, log);
+    isocks_event_out_transfer_data(session->outbev, session->inbev, log);
 }
 
 
@@ -214,10 +246,18 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
         goto isocks_event_accept_error;
     }
 
+    session->outopts = isout_options_create(session->mempool, config->log);
+    if (!session->outopts) {
+        isshe_log_alert(config->log, "create isout options failed");
+        goto isocks_event_accept_error;
+    }
     // new bufferevent
     session->inbev = ievent_buffer_event_socket_create(config->event, fd);
     session->outbev = ievent_buffer_event_socket_create(config->event, ISSHE_INVALID_FILE);
-
+    if (!session->inbev || !session->outbev) {
+        isshe_log_alert(config->log, "create in/out bev failed");
+        goto isocks_event_accept_error;
+    }
     // 选择下一跳信息
     out_conn = isocks_event_select_next(config->outarray, config->nout);
     if (!out_conn) {
@@ -256,21 +296,9 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
 
 isocks_event_accept_error:
     if (session) {
-        if (session->inconn) {
-            isshe_connection_free(config->connpool, session->inconn);
-        }
-
-        if (session->outconn) {
-            isshe_connection_free(config->connpool, session->outconn);
-        }
-        
-        isshe_mpfree(mempool, session, sizeof(isocks_session_t));
+        isocks_session_free(session, ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
     }
 
-    if (mempool) {
-        isshe_mempool_destroy(mempool);
-    }
-
-    // TODO 怎么直接关闭连接？
-    ievent_connection_close(fd);
+    // TODO 怎么关闭连接？
+    // ievent_connection_close(fd);
 }

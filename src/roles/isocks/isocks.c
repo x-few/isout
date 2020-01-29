@@ -13,7 +13,7 @@ void isocks_start(void *ctx)
     isshe_log_notice(log, "isocks_start: pid = %d", getpid());
 
     // 初始化内存池
-    mempool = isshe_mempool_create(ISOCKS_DEFAULT_POOL_SIZE, log);
+    mempool = isshe_mempool_create(ISOCKS_DEFAULT_MEMPOOL_SIZE, log);
     if (!mempool) {
         isshe_log_alert(log, "isocks: create memory pool failed");
         goto isocks_error;
@@ -35,12 +35,12 @@ void isocks_start(void *ctx)
     isocks_config_print(isocks_config, log);
 
     // 初始化log
-    if (isocks_config->log_filename) {
+    if (isocks_config->log_file) {
         isocks_config->log = isshe_log_create(
             isocks_config->log_level,
-            isocks_config->log_filename);
+            isocks_config->log_file);
         isshe_log_notice(log, "isocks log file change to %s",
-            isocks_config->log_filename);
+            isocks_config->log_file);
     } else {
         isocks_config->log = log;
     }

@@ -7,6 +7,11 @@
 #include "event2/listener.h"
 
 #include "isout.h"
+#include "iproxy_config.h"
+#include "iproxy_event.h"
+#include "iproxy_session.h"
+
+#define IPROXY_DEFAULT_MEMPOOL_SIZE     4096
 
 void iproxy_start(void *ctx);
 

@@ -33,12 +33,16 @@
         }]
     },
     "iproxy": {
-        "in": [
-            {
-                "port": "27758",
-                "protocol": "isout"
-            }
-        ]
+        "connpool": 1024,
+        "log": {
+            "level": "debug",
+            "filename_bk": "/tmp/isout_iproxy.log"
+        },
+        "in": [{
+            "addr": "0.0.0.0",
+            "port": 27758,
+            "protocol": "isout"
+        }]
     },
     "irelay": {
         "in": [

@@ -113,9 +113,9 @@ void isshe_socks_opt_parse(uint8_t *buf, int buflen, struct isshe_socks_opts *op
             printf("---isshe---: opts->port = %u\n", opts->port);
             break;
         case ISSHE_SOCKS_OPT_USER_DATA_LEN:
-            memcpy(&opts->user_data_len, cur_data, sizeof(opts->user_data_len));
-            //opts->user_data_len = opts->user_data_len;
-            printf("---isshe---: opts->user_data_len = %u\n", opts->user_data_len);
+            memcpy(&opts->data_len, cur_data, sizeof(opts->data_len));
+            //opts->data_len = opts->data_len;
+            printf("---isshe---: opts->data_len = %u\n", opts->data_len);
             break;
         case ISSHE_SOCKS_OPT_END:
             end = TRUE;

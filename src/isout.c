@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     // 解析config
     iconfig_t   *config;
 
-    config = iconfig_new();
+    config = iconfig_create();
     if (!config) {
         printf("[error] failed to new config\n");
         exit(0);
@@ -86,5 +86,5 @@ int main(int argc, char *argv[])
     imaster_start(config);
 
     isshe_log_instance_free();
-    iconfig_free(&config);
+    iconfig_destroy(&config);
 }

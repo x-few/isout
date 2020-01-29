@@ -9,7 +9,7 @@
 #include "isocks_event.h"
 
 
-#define ISOCKS_DEFAULT_POOL_SIZE        4096
+#define ISOCKS_DEFAULT_MEMPOOL_SIZE        4096
 
 
 void isocks_start(void *ctx);

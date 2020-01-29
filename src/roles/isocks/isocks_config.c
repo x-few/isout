@@ -19,7 +19,7 @@ isocks_config_parse(isocks_config_t *config, isshe_json_t *json, isshe_log_t *lo
     }
 
     // 解析日志级别、日志文件路径
-    config->log_filename = iconfig_log_parse(isocks_json, &config->log_level);
+    config->log_file = iconfig_log_parse(isocks_json, &config->log_level);
 
     // 解析出口/入口的地址、端口、协议
     tmp = isshe_json_get_object(isocks_json, "in");
@@ -58,7 +58,7 @@ isocks_config_print(isocks_config_t *config, isshe_log_t *log)
         "==================== isocks config ==================");
     isshe_log_info(log,
         "- log level:file       : %d:%s",
-        config->log_level, config->log_filename);
+        config->log_level, config->log_file);
 
     for (i = 0; i < config->nin; i++) {
         isshe_log_info(log,

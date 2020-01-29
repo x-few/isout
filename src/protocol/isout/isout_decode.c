@@ -118,22 +118,22 @@ int isout_decode(isession_t *session)
     // 解析选项
     isout_opts_parse(inbev->opts, opts);
 
-    if (inbev->opts.user_data_len) {
+    if (inbev->opts.data_len) {
         // 分配内存，读数据
-        uint8_t *udata = (uint8_t *)malloc(inbev->opts.user_data_len);
+        uint8_t *udata = (uint8_t *)malloc(inbev->opts.data_len);
         if (!udata) {
             printf("ERROR: isout_decode 分配内存失败！！！\n");
             exit(0);
         }
 
         // TODO 判断长度是否够
-        bufferevent_read(inbev, udata, inbev->opts.user_data_len);
+        bufferevent_read(inbev, udata, inbev->opts.data_len);
 
         // 解密数据
-        isout_decode_data(udata, inbev->opts.user_data_len);
+        isout_decode_data(udata, inbev->opts.data_len);
 
         // 转发数据
-        bufferevent_write(outbev, udata, inbev->opts.user_data_len);
+        bufferevent_write(outbev, udata, inbev->opts.data_len);
     }
 
     

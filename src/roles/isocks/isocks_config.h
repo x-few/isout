@@ -15,7 +15,7 @@ struct isocks_config_s
     isshe_int_t         nin;
     isshe_int_t         nout;
     isshe_log_t         *log;
-    isshe_char_t        *log_filename;
+    isshe_char_t        *log_file;
     isshe_int_t         log_level;
     isshe_size_t        connpool_size;
     isshe_connpool_t    *connpool;

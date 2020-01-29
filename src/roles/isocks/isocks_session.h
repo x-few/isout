@@ -16,7 +16,8 @@ struct isocks_session_s
     ievent_buffer_event_t   *outbev;
     isocks_config_t         *config;
     isshe_mempool_t         *mempool;
-    isocks_socks5_info_t    socks5;        // 保存socks5的信息
+    isout_options_t         *outopts;       // out的isout协议的选项
+    isocks_socks5_info_t    socks5;         // 保存socks5的信息
 };
 
 void isocks_session_free(isocks_session_t *session, isshe_int_t flag);

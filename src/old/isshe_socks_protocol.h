@@ -93,7 +93,7 @@ struct isshe_socks_opts
     uint8_t ipv6_len;   // 初始化为0
     uint8_t *dname;     // domain name
     uint8_t *ipv6;      // 初始化为NULL
-    uint32_t user_data_len;  // 用户数据长度
+    uint32_t data_len;  // 用户数据长度
 };
 
 struct isshe_socks_connection
