@@ -7,6 +7,9 @@
 #include "event2/listener.h"
 
 #include "isout.h"
+#include "isout_protocol.h"
+#include "isout_options.h"
+
 #include "iproxy_config.h"
 #include "iproxy_event.h"
 #include "iproxy_session.h"

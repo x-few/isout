@@ -2,6 +2,8 @@
 #define _ISOUT_ISOCKS_H_
 
 #include "isout.h"
+#include "isout_protocol.h"
+#include "isout_options.h"
 
 #include "isocks_config.h"
 #include "isocks_socks5.h"

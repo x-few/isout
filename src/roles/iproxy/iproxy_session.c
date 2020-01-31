@@ -18,6 +18,20 @@ iproxy_session_free(iproxy_session_t *session, isshe_int_t flag)
             isshe_connection_free(session->config->connpool, session->inconn);
             session->inconn = NULL;
         }
+
+        if (session->inopts) {
+            isout_options_destroy(
+                session->inopts,session->mempool);
+            session->inopts = NULL;
+        }
+
+        if (session->inbuf) {
+            isshe_mpfree(session->mempool,
+                session->inbuf, session->inbuf_len);
+            session->inbuf = NULL;
+            session->inbuf_len = 0;
+            session->inbuf_used_len = 0;
+        }
     }
 
     if (IPROXY_SESSION_FREE_OUT & flag) {
@@ -28,7 +42,9 @@ iproxy_session_free(iproxy_session_t *session, isshe_int_t flag)
         }
 
         if (session->outconn) {
-            isshe_connection_free(session->config->connpool, session->outconn);
+            isshe_connection_free(
+                session->config->connpool,
+                session->outconn);
             session->outconn = NULL;
         }
     }

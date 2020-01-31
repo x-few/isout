@@ -25,19 +25,22 @@ void isout_options_destroy(isout_options_t *opts, isshe_mempool_t *mempool)
 
 
 isshe_int_t
-isout_options_from_string(isout_options_t *options,
-    isshe_char_t *options_str, isshe_mempool_t *mempool, isshe_log_t *log)
+isout_options_from_string(
+    isout_options_t *options,
+    isshe_char_t *options_str,
+    isshe_mempool_t *mempool,
+    isshe_log_t *log)
 {
     isout_option_t  *opt;
     isshe_int_t     index;
 
     if (!options || !options_str) {
-        isshe_log_alert("parse isout options failed: invalid parameters");
+        isshe_log_alert(log, "parse isout options failed: invalid parameters");
         return ISSHE_FAILURE;
     }
 
     do {
-        opt = (isout_option_t *)options_str + index;
+        opt = (isout_option_t *)(options_str + index);
         switch (opt->type)
         {
         case ISOUT_OPTION_COUNT:
@@ -47,14 +50,21 @@ isout_options_from_string(isout_options_t *options,
             options->random = ntohl(*(uint32_t *)opt->data);
             break;
         case ISOUT_OPTION_DOMAIN:
-            options->dname_len = opt->len;
-            options->dname =(isshe_uint8_t *)
-                isshe_strdup_mp(opt->data, opt->len, mempool);
+            if (!options->dname) {
+                options->dname_len = opt->len;
+                options->dname = isshe_strdup_mp(
+                    (isshe_char_t *)opt->data, opt->len, mempool);
+            }
+            isshe_log_debug(log, "---isshe---: isout_options_from_string---3---");
             break;
         case ISOUT_OPTION_IPV6:
-            options->ipv6_len = opt->len;
-            options->ipv6 = (isshe_uint8_t *)
-                isshe_strdup_mp(opt->data, opt->len, mempool);
+            isshe_log_debug(log, "---isshe---: isout_options_from_string---4---");
+            if (!options->ipv6) {
+                options->ipv6_len = opt->len;
+                options->ipv6 = isshe_strdup_mp(
+                    (isshe_char_t *)opt->data, opt->len, mempool);
+            }
+            isshe_log_debug(log, "---isshe---: isout_options_from_string---5---");
             break;
         case ISOUT_OPTION_IPV4:
             options->ipv4 = ntohl(*(uint32_t *)opt->data);      // 大端转主机
@@ -66,7 +76,7 @@ isout_options_from_string(isout_options_t *options,
             options->addr_type = opt->data[0];
             break;
         case ISOUT_OPTION_DATA_LEN:
-            options->data_len = ntohs(*(uint16_t *)opt->data);
+            options->data_len = ntohl(*(uint32_t *)opt->data);
             break;
         case ISOUT_OPTION_CRYPTO_ALGO:
             break;
@@ -80,16 +90,10 @@ isout_options_from_string(isout_options_t *options,
         index += sizeof(opt->type) + sizeof(opt->len) + opt->len;
     } while(opt->type != ISOUT_OPTION_END);
 
+    isshe_log_debug(log, "---isshe---: isout_options_from_string---6---");
     return ISSHE_SUCCESS;
 }
 
-isshe_int_t
-isout_options_string_len(isshe_char_t *buf)
-{
-    isout_option_t option;
-    return (isout_option_find_end(buf)
-        + sizeof(option.len) + sizeof(option.type));
-}
 
 isshe_int_t isout_options_len(isout_options_t *opts)
 {
@@ -97,7 +101,6 @@ isshe_int_t isout_options_len(isout_options_t *opts)
     isout_option_t opt;
 
     len = 0;
-    opt_count = 0;
     if (opts->count != 0) {
         len += sizeof(isshe_uint64_t)
             + sizeof(opt.type) + sizeof(opt.len);
@@ -109,7 +112,7 @@ isshe_int_t isout_options_len(isout_options_t *opts)
     }
 
     if (opts->dname && opts->dname_len != 0) {
-        len += sopts->dname_len
+        len += opts->dname_len
             + sizeof(opt.type) + sizeof(opt.len);
     }
 
@@ -150,10 +153,13 @@ isout_options_to_string(isout_options_t *opts,
     isshe_mempool_t *mempool, isshe_size_t *stropts_len)
 {
     // 计算所有OPTION长度
-    isshe_int_t len;
-    isshe_char_t *stropts;
-    isshe_char_t *tmp;
-    isout_option_t opt;
+    isshe_int_t     len;
+    isshe_char_t    *stropts;
+    isshe_char_t    *tmp;
+    isout_option_t  opt;
+    isshe_uint16_t  ui16;
+    isshe_uint32_t  ui32;
+    isshe_uint64_t  ui64;
     
     len = isout_options_len(opts);
     if (len == 0) {
@@ -169,13 +175,15 @@ isout_options_to_string(isout_options_t *opts,
     tmp = stropts;
     // 进行tostring
     if (opts->count != 0) {
+        ui64 = htonll(opts->count);
         tmp += isout_option_append(tmp,
-            ISOUT_OPTION_COUNT, sizeof(opts->count), &opts->count);
+            ISOUT_OPTION_COUNT, sizeof(opts->count), &ui64);
     }
 
     if (opts->random != 0) {
+        ui32 = htonl(opts->random);
         tmp += isout_option_append(tmp,
-            ISOUT_OPTION_RANDOM, sizeof(opts->random), &opts->random);
+            ISOUT_OPTION_RANDOM, sizeof(opts->random), &ui32);
     }
 
     if (opts->dname && opts->dname_len != 0) {
@@ -189,13 +197,15 @@ isout_options_to_string(isout_options_t *opts,
     }
 
     if (opts->ipv4 != 0) {
+        ui32 = htonl(opts->ipv4);
         tmp += isout_option_append(tmp,
-            ISOUT_OPTION_IPV4, sizeof(opts->ipv4), &opts->ipv4);
+            ISOUT_OPTION_IPV4, sizeof(opts->ipv4), &ui32);
     }
 
     if (opts->port != 0) {
+        ui16 = htons(opts->port);
         tmp += isout_option_append(tmp,
-            ISOUT_OPTION_PORT, sizeof(opts->port), &opts->port);
+            ISOUT_OPTION_PORT, sizeof(opts->port), &ui16);
     }
 
     if (opts->addr_type != 0) {
@@ -204,8 +214,9 @@ isout_options_to_string(isout_options_t *opts,
     }
 
     if (opts->data_len != 0) {
+        ui32 = htonl(opts->data_len);
         tmp += isout_option_append(tmp,
-            ISOUT_OPTION_DATA_LEN, sizeof(opts->data_len), &opts->data_len);
+            ISOUT_OPTION_DATA_LEN, sizeof(opts->data_len), &ui32);
     }
 
     // END OPTION
@@ -214,4 +225,69 @@ isout_options_to_string(isout_options_t *opts,
     *stropts_len = len;
 
     return stropts;
+}
+
+
+void
+isout_options_print(isout_options_t *opts, isshe_log_t *log)
+{
+    isshe_log_info(log, "======================================");
+    isshe_log_info(log, "isout options: ");
+    if (opts->count != 0) {
+        isshe_log_info(log, " - count: %d", opts->count);
+    }
+
+    if (opts->random != 0) {
+        isshe_log_info(log, " - random: %lld", opts->random);
+    }
+
+    if (opts->dname && opts->dname_len != 0) {
+        isshe_log_info(log, " - dname: (%d)%s", opts->dname_len, opts->dname);
+    }
+
+    if (opts->ipv6 && opts->ipv6_len != 0) {
+        isshe_log_info(log, " - ipv6: (%d)%s", opts->ipv6_len, opts->ipv6);
+    }
+
+    if (opts->ipv4 != 0) {
+        isshe_log_info(log, " - ipv4: %u", opts->ipv4);
+    }
+
+    if (opts->port != 0) {
+        isshe_log_info(log, " - port: %u", opts->port);
+    }
+
+    if (opts->addr_type != 0) {
+        isshe_log_info(log, " - addr_type: %u", opts->addr_type);
+    }
+
+    if (opts->data_len != 0) {
+        isshe_log_info(log, " - data_len: %u", opts->data_len);
+    }
+
+    isshe_log_info(log, "======================================");
+}
+
+isshe_size_t
+isout_options_string_len(isshe_char_t *buf, isshe_size_t buflen)
+{
+    isout_option_t  opt;
+    isshe_size_t    len;
+
+    len = isout_option_find_end(buf, buflen);
+    if (len == ISSHE_FAILURE) {
+        return ISSHE_FAILURE;
+    }
+
+    return (len + sizeof(opt.type) + sizeof(opt.len));
+}
+
+isshe_bool_t
+isout_options_is_complete(isshe_char_t *buf, isshe_size_t buflen)
+{
+    if (isout_options_string_len(buf, buflen) == ISSHE_FAILURE) {
+        return ISSHE_FALSE;
+    }
+
+    return ISSHE_TRUE;
 }

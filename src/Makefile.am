@@ -4,6 +4,7 @@ AM_CPPFLAGS = -g -O2 \
 	-I$(top_srcdir)/lib/libevent/include \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/base \
+	-I$(top_srcdir)/src/protocol/isout \
 	-I$(top_srcdir)/src/roles/imaster \
 	-I$(top_srcdir)/src/roles/isocks \
 	-I$(top_srcdir)/src/roles/iproxy
@@ -20,6 +21,8 @@ isout_out_SOURCES = \
 	base/iprotocol.c \
 	base/ievent.c \
 	base/iconfig.c \
+	protocol/isout/isout_options.c \
+	protocol/isout/isout_protocol.c \
 	roles/imaster/imaster_process.c \
 	roles/imaster/imaster_signal.c \
 	roles/imaster/imaster.c \

@@ -17,6 +17,9 @@ struct isocks_session_s
     isocks_config_t         *config;
     isshe_mempool_t         *mempool;
     isout_options_t         *outopts;       // out的isout协议的选项
+    isshe_char_t            *outbuf;
+    isshe_size_t            outbuf_len;
+    isshe_size_t            outbuf_used_len;
     isocks_socks5_info_t    socks5;         // 保存socks5的信息
 };
 

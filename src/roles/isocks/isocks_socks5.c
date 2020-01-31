@@ -60,6 +60,7 @@ socks5_connect_cmd_process(ievent_buffer_event_t *bev,
     isshe_size_t            len;
 
     // request cmd
+    isshe_log_debug(log, "socks5 request addr type = %d", request->atype);
     switch (request->atype)
     {
         case ISOCKS_SOCKS5_ADDR_TYPE_DOMAIN:
@@ -90,6 +91,8 @@ socks5_connect_cmd_process(ievent_buffer_event_t *bev,
 
     ievent_buffer_event_read(bev, info->addr_text, info->addr_len);
     ievent_buffer_event_read(bev, &info->port, sizeof(info->port));
+    // TODO IPv4 ntohs
+    info->port = ntohs(info->port);
 
     // reply
     isshe_memzero(&reply, sizeof(isocks_socks5_reply_t));

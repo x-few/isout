@@ -36,6 +36,13 @@ isocks_session_free(isocks_session_t *session, isshe_int_t flag)
             isout_options_destroy(session->outopts, session->mempool);
             session->outopts = NULL;
         }
+
+        if (session->outbuf) {
+            isshe_mpfree(session->mempool, session->outbuf, session->outbuf_len);
+            session->outbuf = NULL;
+            session->outbuf_len = 0;
+            session->outbuf_used_len = 0;
+        }
     }
 
     // 如果两个都关闭了，就释放其余所有资源，如mempool

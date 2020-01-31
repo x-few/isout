@@ -2,55 +2,150 @@
 
 
 isshe_int_t
-isocks_event_transfer_data(ievent_buffer_event_t *srcbev,
-    ievent_buffer_event_t *dstbev, isshe_log_t *log)
+isocks_event_transfer_data(ievent_buffer_event_t *dstbev,
+    ievent_buffer_event_t *srcbev, isshe_log_t *log)
 {
     ievent_buffer_t *src, *dst;
 
     src = ievent_buffer_event_get_input(srcbev);
     dst = ievent_buffer_event_get_output(dstbev);
 
-    isshe_log_debug(log, "transfer: %p(%u) -> %p(%lu)",
+    isshe_log_debug(log, "isocks transfer: %p(%u) -> %p(%lu)",
         srcbev, ievent_buffer_get_length(src),
         dstbev, ievent_buffer_get_length(dst));
 
-    evbuffer_add_buffer(dst, src);
+    ievent_buffer_add_buffer(dst, src);
 
     return ISSHE_SUCCESS;
 }
 
 isshe_int_t
-isocks_event_in_transfer_data(isocks_session_t *sessoin)
+isocks_event_transfer_data2(ievent_buffer_event_t *dstbev,
+    ievent_buffer_event_t *srcbev, isshe_size_t data_len, isshe_log_t *log)
+{
+    isshe_char_t        buf[ISSHE_DEFAULT_BUFFER_LEN] = {0};
+    isshe_size_t        buf_len = ISSHE_DEFAULT_BUFFER_LEN;
+    isshe_size_t        read_len = 0;
+    
+    isshe_log_debug(log, "isocks transfer: %p -> %p: %u",
+        srcbev, dstbev, data_len);
+
+    while(data_len > 0) {
+        read_len = data_len < buf_len ? data_len : buf_len;
+        ievent_buffer_event_read(srcbev, buf, read_len);
+        ievent_buffer_event_write(dstbev, buf, read_len);
+        data_len -= read_len;
+    }
+
+    return ISSHE_SUCCESS;
+}
+
+isshe_int_t
+isocks_event_in_transfer_data(isocks_session_t *session)
 {
     isshe_char_t    *stropts = NULL;
     isshe_size_t    stropts_len = 0;
+    isshe_log_t     *log = session->config->log;
 
-    // TODO 设置options
+    if (session->outconn->status != ISOUT_STATUS_CONNECTED) {
+        // TODO 设置options
+        session->outopts->data_len = ievent_buffer_get_length(
+            ievent_buffer_event_get_input(session->inbev));
+        session->outopts->dname = session->socks5.addr_text;
+        session->outopts->dname_len = session->socks5.addr_len;
+        session->outopts->port = session->socks5.port;
 
-    // 生成OPTION字符串
-    if (session->outopts) {
-        stropts = isout_options_to_string(session->outopts, session->mempool, &stropts_len);
-        if (!stropts) {
-            isshe_log_warning(log, "options to string failed");
-            return ISSHE_FAILURE;
+        isout_options_print(session->outopts, log);
+
+        // 生成OPTION字符串
+        if (session->outopts) {
+            stropts = isout_options_to_string(session->outopts, session->mempool, &stropts_len);
+            if (!stropts) {
+                isshe_log_warning(log, "options to string failed");
+                return ISSHE_FAILURE;
+            }
         }
-    }
 
-    if (stropts && stropts_len != 0) {
-        ievent_buffer_event_write(session->outbev, stropts, stropts_len);
+        if (stropts && stropts_len != 0) {
+            isshe_log_debug(log, "stropts = (%d)%s", stropts_len, stropts);
+            ievent_buffer_event_write(session->outbev, stropts, stropts_len);
+        }
+        session->outconn->status = ISOUT_STATUS_CONNECTED;
     }
 
     // TODO 加密
-    
+
+
     // 转发到out
-    isocks_event_transfer_data(session->inbev, session->outbev, session->config->log);
+    isocks_event_transfer_data(session->outbev, session->inbev, session->config->log);
+    //isocks_event_transfer_data2(session->outbev,
+    //    session->inbev, session->outopts->data_len, log);
+
+    return ISSHE_SUCCESS;
 }
 
 
 isshe_int_t
-isocks_event_out_transfer_data(isocks_session_t *sessoin)
+isocks_event_out_transfer_data(isocks_session_t *session)
 {
+    isshe_size_t    len;
+    isshe_size_t    remain_len;
+    isshe_size_t    stropts_len;
+    isshe_log_t     *log = session->config->log;
 
+    // 读取（读多长呢？）
+    // 先读最大选项长度
+    /*
+    remain_len = session->outbuf_len - session->outbuf_used_len;
+    if (remain_len <= 0) {
+        isshe_log_warning(log, "isout options buffer remain lenght = 0");
+        return ISSHE_FAILURE;   // 释放关闭连接
+    }
+
+    len = ievent_buffer_get_length(
+        ievent_buffer_event_get_input(session->outbev));
+    len = len < remain_len ? len : remain_len;
+    ievent_buffer_event_read(session->outbev,
+        session->outbuf + session->outbuf_used_len, len);
+
+    // TODO 解密
+
+    // 检查是否是完整的选项
+    stropts_len = isout_options_string_len(
+        session->outbuf, session->outbuf_used_len + len);
+    if (stropts_len == ISSHE_FAILURE) {
+        // 继续等待更多数据
+        session->outbuf_used_len += len;
+        return ISSHE_SUCCESS;
+    }
+
+    // 解析选项
+    if (isout_options_from_string(
+        session->outopts, session->outbuf,
+        session->mempool, log) == ISSHE_FAILURE) {
+        
+        isshe_log_warning(log, "isout options parse failed");
+        return ISSHE_FAILURE;
+    }
+
+    isout_options_print(session->outopts, log);
+
+    // 转发数据
+    if (session->outbuf_used_len - stropts_len > 0) {
+        ievent_buffer_event_write(session->inbev,
+            session->outbuf + stropts_len,
+            session->outbuf_used_len - stropts_len);
+    }
+
+    // 剩下没读的
+    isocks_event_transfer_data2(session->inbev,
+        session->outbev, session->outopts->data_len, log);
+    */
+
+    isocks_event_transfer_data(session->inbev,
+        session->outbev, session->config->log);
+
+    return ISSHE_SUCCESS;
 }
 
 void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
@@ -91,14 +186,10 @@ void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
 void isocks_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
     isocks_session_t *session = (isocks_session_t *)ctx;
-    isshe_log_t         *log;
 
-    log = session->config->log;
-
-    // 读取、解密
-
-    // 转发到in
-    isocks_event_out_transfer_data(session->outbev, session->inbev, log);
+    if (isocks_event_out_transfer_data(session) == ISSHE_FAILURE) {
+        // TODO 禁用读写、关闭、释放连接
+    }
 }
 
 
@@ -192,7 +283,7 @@ isocks_event_connect_to_next(ievent_buffer_event_t *evb,
     conn->socklen = socklen;
     // conn->fd = fd            // TODO 需要再补充，从evb中获取
 
-    return ISSHE_TRUE;
+    return ISSHE_SUCCESS;
 }
 
 
@@ -239,18 +330,26 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
         isshe_log_alert(config->log, "get inbound connection failed");
         goto isocks_event_accept_error;
     }
-    
+
     session->outconn = isshe_connection_get(config->connpool);
     if (!session->outconn) {
         isshe_log_alert(config->log, "get outbound connection failed");
         goto isocks_event_accept_error;
     }
 
-    session->outopts = isout_options_create(session->mempool, config->log);
+    session->outopts = isout_options_create(mempool, config->log);
     if (!session->outopts) {
         isshe_log_alert(config->log, "create isout options failed");
         goto isocks_event_accept_error;
     }
+
+    session->outbuf = isshe_mpalloc(mempool, ISOUT_OPTIONS_STRING_LEN_MAX);
+    if (!session->outbuf) {
+        goto isocks_event_accept_error;
+    }
+    session->outbuf_len = ISOUT_OPTIONS_STRING_LEN_MAX;
+    session->outbuf_used_len = 0;
+
     // new bufferevent
     session->inbev = ievent_buffer_event_socket_create(config->event, fd);
     session->outbev = ievent_buffer_event_socket_create(config->event, ISSHE_INVALID_FILE);
@@ -258,6 +357,7 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
         isshe_log_alert(config->log, "create in/out bev failed");
         goto isocks_event_accept_error;
     }
+
     // 选择下一跳信息
     out_conn = isocks_event_select_next(config->outarray, config->nout);
     if (!out_conn) {
@@ -284,6 +384,7 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
     session->outconn->fd = ievent_buffer_event_getfd(session->outbev);
     session->outconn->mempool = mempool;
     session->outconn->data = (void *)session;
+    session->outconn->status = ISOUT_STATUS_UNKNOWN;
 
     ievent_buffer_event_setcb(session->inbev, isocks_event_in_read_cb, 
         NULL, isocks_event_in_event_cb, (void*)session); //->outconn);

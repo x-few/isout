@@ -216,3 +216,9 @@ ievent_buffer_event_free(ievent_buffer_event_t *bev)
 {
     bufferevent_free(bev);
 }
+
+isshe_int_t
+ievent_buffer_add_buffer(ievent_buffer_t *dst, ievent_buffer_t *src)
+{
+    return evbuffer_add_buffer(dst, src);
+}

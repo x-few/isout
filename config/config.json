@@ -15,7 +15,7 @@
         "connpool": 1024,
         "log": {
             "level": "debug",
-            "filename_bk": "/tmp/isout_isocks.log"
+            "filename": "/tmp/isout_isocks.log"
         },
         "in": [{
             "addr": "0.0.0.0",
@@ -36,7 +36,7 @@
         "connpool": 1024,
         "log": {
             "level": "debug",
-            "filename_bk": "/tmp/isout_iproxy.log"
+            "filename": "/tmp/isout_iproxy.log"
         },
         "in": [{
             "addr": "0.0.0.0",

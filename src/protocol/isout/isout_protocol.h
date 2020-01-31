@@ -7,7 +7,7 @@
 
 // 标准
 #include "isshe_common.h"
-#include "isshe_options.h"
+#include "isout_options.h"
 
 #define ISOUT_ALL_OPT_MAX_LEN       1024
 #define ISOUT_HMAC_LEN              32
@@ -27,6 +27,12 @@ struct isout_option_s{
     isshe_uint8_t data[0];
 };
 
+enum isout_status_e
+{
+    ISOUT_STATUS_UNKNOWN = 0,
+    ISOUT_STATUS_CONNECTED = 1,
+};
+
 enum isout_opt_e {
     ISOUT_OPTION_COUNT,
     ISOUT_OPTION_RANDOM,
@@ -43,16 +49,14 @@ enum isout_opt_e {
     ISOUT_OPTION_END = 255,
 };
 
-isshe_int_t isout_option_append(isshe_char_t *buf,
+isshe_size_t isout_option_append(isshe_char_t *buf,
     isshe_uint8_t type, isshe_uint8_t len, const void *data);
 
-void isout_option_init_with_end(isshe_char_t *buf);
+isshe_size_t isout_option_init_with_end(isshe_char_t *buf);
 
-isshe_int_t isout_options_len(isshe_char_t *buf);
+isshe_int_t isout_option_find_end(isshe_char_t *buf, isshe_size_t buflen);
 
-isshe_int_t isout_option_find_end(isshe_char_t *buf);
-
-isshe_int_t isout_option_insert(isshe_char_t *buf,
+isshe_int_t isout_option_insert(isshe_char_t *buf, isshe_size_t buflen,
     isshe_uint8_t type, isshe_uint8_t len, const void *data);
 
 #endif

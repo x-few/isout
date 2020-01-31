@@ -15,6 +15,10 @@ struct iproxy_session_s
     ievent_buffer_event_t   *inbev;
     ievent_buffer_event_t   *outbev;
     iproxy_config_t         *config;
+    isout_options_t         *inopts;
+    isshe_char_t            *inbuf;
+    isshe_size_t            inbuf_len;
+    isshe_size_t            inbuf_used_len;
     isshe_mempool_t         *mempool;
 };
 

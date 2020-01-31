@@ -91,4 +91,7 @@ ievent_buffer_event_getfd(ievent_buffer_event_t *bev);
 void
 ievent_buffer_event_free(ievent_buffer_event_t *bev);
 
+isshe_int_t
+ievent_buffer_add_buffer(ievent_buffer_t *dst, ievent_buffer_t *src);
+
 #endif
