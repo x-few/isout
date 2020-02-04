@@ -55,16 +55,13 @@ isout_options_from_string(
                 options->dname = isshe_strdup_mp(
                     (isshe_char_t *)opt->data, opt->len, mempool);
             }
-            isshe_log_debug(log, "---isshe---: isout_options_from_string---3---");
             break;
         case ISOUT_OPTION_IPV6:
-            isshe_log_debug(log, "---isshe---: isout_options_from_string---4---");
             if (!options->ipv6) {
                 options->ipv6_len = opt->len;
                 options->ipv6 = isshe_strdup_mp(
                     (isshe_char_t *)opt->data, opt->len, mempool);
             }
-            isshe_log_debug(log, "---isshe---: isout_options_from_string---5---");
             break;
         case ISOUT_OPTION_IPV4:
             options->ipv4 = ntohl(*(uint32_t *)opt->data);      // 大端转主机
@@ -90,7 +87,6 @@ isout_options_from_string(
         index += sizeof(opt->type) + sizeof(opt->len) + opt->len;
     } while(opt->type != ISOUT_OPTION_END);
 
-    isshe_log_debug(log, "---isshe---: isout_options_from_string---6---");
     return ISSHE_SUCCESS;
 }
 

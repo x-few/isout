@@ -12,14 +12,6 @@ void isout_usage_then_exit()
     exit(0);
 }
 
-/* TODO delete 20200106
-void isout_save_argv(iconfig_t *config,
-    isshe_int_t argc, isshe_char_t *argv[])
-{
-    config->argc = argc;
-    config->argv = argv;
-}
-*/
 
 void isout_optget(int argc, char *argv[], iconfig_t *config)
 {
@@ -37,7 +29,6 @@ void isout_optget(int argc, char *argv[], iconfig_t *config)
         switch (ch) {
             case 'c':
                 config->config_file = optarg;
-                //printf("config file = %s\n", config->config_file);
                 break;
             case 'l':
                 config->log_file = optarg;
@@ -65,8 +56,6 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
-    // TODO delete 20200106
-    //isout_save_argv(config, argc, argv);
 
     isout_optget(argc, argv, config);
 
