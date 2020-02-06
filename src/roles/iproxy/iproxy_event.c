@@ -53,84 +53,93 @@ iproxy_event_transfer_data(ievent_buffer_event_t *dstbev,
     return ISSHE_SUCCESS;
 }
 
-
-// TODO 重构这里
-void iproxy_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
+isshe_int_t
+iproxy_event_in_transfer_data(iproxy_session_t *session)
 {
-    iproxy_session_t    *session = (iproxy_session_t *)ctx;
-    isshe_log_t         *log;
-    isshe_size_t        len;
     isshe_size_t        remain_len;
     isshe_size_t        stropts_len;
+    isshe_log_t         *log = session->config->log;
+    isshe_char_t        data[IEVENT_BUFFER_MAX_READ];
+    isshe_size_t        data_len = 0;
+    isshe_size_t        total_len = 0;
+    isshe_size_t        read_len = 0;
     isshe_connection_t  *outconn;
 
-    log = session->config->log;
+    total_len = ievent_buffer_get_length(ievent_buffer_event_get_input(session->inbev));
 
-    // 选项数据更新到连接中
-    if (session->inconn->status != ISOUT_STATUS_CONNECTED) {
-        // 读
+    // 读选项阶段。inbuf_used_len != 0 表示读选项
+    if (session->inconn->status == ISOUT_STATUS_READ_OPTS) {
         remain_len = session->inbuf_len - session->inbuf_used_len;
         if (remain_len <= 0) {
             isshe_log_warning(log, "isout options buffer remain lenght = 0");
-            // TODO 禁用读写、关闭、释放连接
-            return ;
+            return ISSHE_FAILURE;
         }
-        len = ievent_buffer_get_length(ievent_buffer_event_get_input(session->inbev));
-        len = len < remain_len ? len : remain_len;
-        len = ievent_buffer_event_read(session->inbev,
-            session->inbuf + session->inbuf_used_len, len);
-        session->inbuf_used_len += len;
 
-        // 解密
-
+        read_len = total_len < remain_len ? total_len : remain_len;
+        read_len = ievent_buffer_event_read(session->inbev,
+            session->inbuf + session->inbuf_used_len, read_len);
         
+        session->inbuf_used_len += read_len;
+        total_len -= read_len;
+
         // 检查是否是完整的选项
         stropts_len = isout_options_string_len(
             session->inbuf, session->inbuf_used_len);
         if (stropts_len == ISSHE_FAILURE) {
             // 继续等待更多数据
             isshe_log_debug(log, "iproxy in: waiting more data");
-            return;
+            return ISSHE_SUCCESS;
         }
 
         // 解析选项
-        if (isout_options_from_string(
-            session->inopts, session->inbuf,
-            session->mempool, log) == ISSHE_FAILURE) {
-            
-            isshe_log_warning(log, "isout options parse failed");
-            // TODO 禁用读写、关闭、释放连接
-            return ;
+        if (isout_options_from_string(session->inopts, session->inbuf,
+        session->mempool, log) == ISSHE_FAILURE) {
+            isshe_log_error(log, "isout options parse failed");
+            return ISSHE_FAILURE;
         }
 
-        isout_options_print(session->inopts, log);
+        //isout_options_print(session->inopts, log);
 
-        outconn = session->outconn;
-        outconn->addr_text = isshe_mpalloc(session->mempool, session->inopts->dname_len + 1);
+        // 读多了数据，复制到data
+        /*
+        data_len = session->inbuf_used_len - stropts_len;
+        if (data_len > 0) {
+            isshe_memcpy(data, session->inbuf + stropts_len, data_len);
+        }
+        */
+        session->stropts_len = stropts_len;
+
+        //session->inbuf_used_len = 0;
+        session->inconn->status = ISOUT_STATUS_READ_DATA;
+    }
+
+    // 连接下一跳
+    outconn = session->outconn;
+    if (!outconn->addr_text) {
+        outconn->addr_text = isshe_mpalloc(
+            session->mempool, session->inopts->dname_len + 1);
         if (!outconn->addr_text) {
             isshe_log_alert(log, "mpalloc addr_text failed");
-            // TODO 禁用读写、关闭、释放连接
-            return ;
+            return ISSHE_FAILURE;
         }
-        isshe_memcpy(outconn->addr_text, session->inopts->dname, session->inopts->dname_len);
+        isshe_memcpy(outconn->addr_text,
+            session->inopts->dname,session->inopts->dname_len);
         outconn->addr_text[session->inopts->dname_len] = '\0';
 
         outconn->sockaddr = isshe_mpalloc(session->mempool, sizeof(isshe_sockaddr_t));
         if (!outconn->sockaddr) {
             isshe_log_alert(log, "mpalloc sockaddr failed");
-            // TODO 禁用读写、关闭、释放连接
-            return ;
+            return ISSHE_FAILURE;
         }
 
         isshe_log_debug(log, "outconn->addr_text = (%d)%s",
             strlen(outconn->addr_text), outconn->addr_text);
 
-        // TODO 解析成sockaddr
         if (isshe_conn_addr_pton(outconn->addr_text,
         ISSHE_CONN_ADDR_TYPE_DOMAIN, outconn->sockaddr,
         &outconn->socklen) == ISSHE_FAILURE) {
             isshe_log_alert(log, "convert addr string to socksaddr failed");
-            return ;
+            return ISSHE_FAILURE;
         }
 
         isshe_log_debug(log, "set sock port = %d", session->inopts->port);
@@ -139,68 +148,109 @@ void iproxy_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
         isshe_debug_print_addr((struct sockaddr *)outconn->sockaddr, log);
 
         // 连接下一跳（需要的话）
-        if (iproxy_event_connect_to_next(
-            session->outbev, outconn->sockaddr,
-            outconn->socklen, log) == ISSHE_FAILURE) {
-            
-            // TODO 禁用读写、关闭、释放连接
+        if (iproxy_event_connect_to_next(session->outbev, outconn->sockaddr,
+        outconn->socklen, log) == ISSHE_FAILURE) {
             isshe_log_alert(log, "connect to xx(TODO) failed");
-            return;
+            return ISSHE_FAILURE;
         }
-
-        session->inconn->status = ISOUT_STATUS_CONNECTED;
-
-        // 转发数据
-        if (session->inbuf_used_len - stropts_len > 0) {
-            isshe_log_debug(log, "ievent_buff_event_write %d bytes",
-                session->inbuf_used_len - stropts_len);
-            ievent_buffer_event_write(session->outbev,
-                session->inbuf + stropts_len,
-                session->inbuf_used_len - stropts_len);
-        }
-    } else {
-        // TODO 解密
     }
 
-    // 转发数据
-    iproxy_event_transfer_data(session->outbev,
-        session->inbev, session->config->log);
-    //iproxy_event_transfer_data2(session->outbev,
-    //    session->inbev, session->inopts->data_len, log);
+    if (session->inopts->data_len <= 0) {
+        session->outconn->status = ISOUT_STATUS_READ_OPTS;
+        return ISSHE_SUCCESS;
+    }
+
+    // 读数据阶段
+    data_len = session->inbuf_used_len - session->stropts_len;
+    if (total_len + data_len < session->inopts->data_len) {
+        // 没数据或者需要等待更多数据
+        return ISSHE_SUCCESS;
+    }
+
+    if (data_len > 0) {
+        isshe_memcpy(data, session->inbuf + session->stropts_len, data_len);
+    }
+
+    // 读取、解密、转发数据部分
+    if (data_len < session->inopts->data_len) {
+        ievent_buffer_event_read(session->inbev,
+            data + data_len, session->inopts->data_len - data_len);
+    }
+
+    data_len = session->inopts->data_len;
+    isout_decode(session->inopts, data, data_len, log);
+    isshe_log_debug(log, "in(%p) -> out(%p): options len: %d, data len = %d",
+        session->inbev, session->outbev, stropts_len, data_len);
+    ievent_buffer_event_write(session->outbev, data, data_len);
+    session->inconn->status = ISOUT_STATUS_READ_OPTS;
+
+    session->inbuf_used_len = 0;
+
+    return ISSHE_SUCCESS;
 }
 
+
+void iproxy_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
+{
+    iproxy_session_t    *session = (iproxy_session_t *)ctx;
+
+    if (iproxy_event_in_transfer_data(session) == ISSHE_FAILURE) {
+        // 释放连接、释放资源
+    }
+}
+
+isshe_int_t
+iproxy_event_out_transfer_data(iproxy_session_t *session)
+{
+    isshe_log_t     *log;
+    isshe_char_t    data[IEVENT_BUFFER_MAX_READ + ISOUT_OPTIONS_STRING_LEN_MAX];
+    isshe_size_t    data_len = 0;
+    isshe_size_t    stropts_len = 0;
+    isshe_uint32_t  tmp;
+
+    log = session->config->log;
+    data_len = ievent_buffer_get_length(
+        ievent_buffer_event_get_input(session->outbev));
+    if (data_len == 0) {
+        return ISSHE_SUCCESS;
+    }
+
+    //isshe_log_debug(log, "---isshe---: iproxy_event_out_transfer_data---1--- data_len = %d", data_len);
+    // 添加选项（data_len、end)
+    tmp = htonl(data_len);
+    stropts_len += isout_option_append(data + stropts_len,
+        ISOUT_OPTION_DATA_LEN, sizeof(isshe_uint32_t), &tmp);
+    stropts_len += isout_option_append(
+        data + stropts_len, ISOUT_OPTION_END, 0, NULL);
+
+    //isout_options_print(session->inopts, log);
+
+    //data_len = stropts_len;
+    // 读取数据
+    ievent_buffer_event_read(session->outbev, data + stropts_len, data_len);
+    
+    // 加密数据
+    if (data_len) {
+        isout_encode(session->inopts, data + stropts_len, data_len, log);
+    }
+
+    isshe_log_debug(log, "out(%p) -> in(%p): options len: %d, data len = %d",
+        session->outbev, session->inbev, stropts_len, data_len);
+    // 转发选项 & 数据
+    ievent_buffer_event_write(session->inbev, data, stropts_len + data_len);
+
+    //iproxy_event_transfer_data(session->inbev, session->outbev, log);
+
+    return ISSHE_SUCCESS;
+}
 
 void iproxy_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
     iproxy_session_t *session = (iproxy_session_t *)ctx;
-    isshe_log_t         *log;
-    isshe_char_t        stropts[128] = {0};
-    isshe_size_t        stropts_len = 0;
-    isshe_size_t        data_len = 0;
 
-    log = session->config->log;
-
-    // 读
-
-    // 加密
-
-    /*
-    // 加选项
-    data_len = ievent_buffer_get_length(
-        ievent_buffer_event_get_input(session->outbev));
-    stropts_len += isout_option_append(stropts + stropts_len,
-        ISOUT_OPTION_DATA_LEN, sizeof(isshe_uint32_t), &data_len);
-    stropts_len += isout_option_append(
-        stropts + stropts_len,ISOUT_OPTION_END, 0, NULL);
-
-    // 转发选项
-    ievent_buffer_event_write(session->inbev, stropts, stropts_len);
-
-    // 转发数据
-    iproxy_event_transfer_data2(session->inbev, session->outbev, data_len, log);
-    */
-
-    iproxy_event_transfer_data(session->inbev, session->outbev, log);
+    if (iproxy_event_out_transfer_data(session) == ISSHE_FAILURE) {
+        // 释放资源、释放连接
+    }
 }
 
 
@@ -346,7 +396,7 @@ iproxy_event_accept_cb(ievent_conn_listener_t *listener,
     session->mempool = mempool;
     session->config = config;
     session->inconn->fd = fd;
-    session->inconn->status = ISOUT_STATUS_UNKNOWN;
+    session->inconn->status = ISOUT_STATUS_READ_OPTS;
     session->inconn->data = (void *)session;
     session->inconn->mempool = mempool;
     session->outconn->mempool = mempool;

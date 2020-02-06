@@ -4,6 +4,8 @@
 #include "isout.h"
 #include "isout_protocol.h"
 #include "isout_options.h"
+#include "isout_encode.h"
+#include "isout_decode.h"
 
 #include "isocks_config.h"
 #include "isocks_socks5.h"

@@ -9,6 +9,8 @@
 #include "isout.h"
 #include "isout_protocol.h"
 #include "isout_options.h"
+#include "isout_encode.h"
+#include "isout_decode.h"
 
 #include "iproxy_config.h"
 #include "iproxy_event.h"

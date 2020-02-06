@@ -81,12 +81,26 @@ isout_options_from_string(
             break;
         case ISOUT_OPTION_CRYPTO_IV:
             break;
+        case ISOUT_OPTION_SESSION_CRYPTO_ALGO:
+            options->session_crypto_algo = opt->data[0];
+            break;
+        case ISOUT_OPTION_SESSION_CRYPTO_KEY:
+            if (!options->session_crypto_key) {
+                options->session_crypto_key = isshe_strdup_mp(
+                    (isshe_char_t *)opt->data, opt->len, mempool);
+            }
+            break;
+        case ISOUT_OPTION_SESSION_CRYPTO_IV:
+            if (!options->session_crypto_iv) {
+                options->session_crypto_iv = isshe_strdup_mp(
+                    (isshe_char_t *)opt->data, opt->len, mempool);
+            }
+            break;
         default:
             break;
         }
         index += sizeof(opt->type) + sizeof(opt->len) + opt->len;
     } while(opt->type != ISOUT_OPTION_END);
-
     return ISSHE_SUCCESS;
 }
 
@@ -98,12 +112,12 @@ isshe_int_t isout_options_len(isout_options_t *opts)
 
     len = 0;
     if (opts->count != 0) {
-        len += sizeof(isshe_uint64_t)
+        len += sizeof(opts->count)
             + sizeof(opt.type) + sizeof(opt.len);
     }
 
     if (opts->random != 0) {
-        len += sizeof(isshe_uint32_t)
+        len += sizeof(opts->random)
             + sizeof(opt.type) + sizeof(opt.len);
     }
 
@@ -118,23 +132,46 @@ isshe_int_t isout_options_len(isout_options_t *opts)
     }
 
     if (opts->ipv4 != 0) {
-        len += sizeof(isshe_uint32_t)
+        len += sizeof(opts->ipv4)
             + sizeof(opt.type) + sizeof(opt.len);
     }
 
     if (opts->port != 0) {
-        len += sizeof(isshe_uint16_t)
+        len += sizeof(opts->port)
             + sizeof(opt.type) + sizeof(opt.len);
     }
 
     if (opts->addr_type != 0) {
-        len += sizeof(isshe_uint8_t)
+        len += sizeof(opts->addr_type)
             + sizeof(opt.type) + sizeof(opt.len);
     }
 
     if (opts->data_len != 0) {
-        len += sizeof(isshe_uint32_t)
+        len += sizeof(opts->data_len)
             + sizeof(opt.type) + sizeof(opt.len);
+    }
+
+    if (opts->session_crypto_algo != ISOUT_CRYPTO_ALGO_UNKNOWN) {
+        len += sizeof(opts->session_crypto_algo)
+            + sizeof(opt.type) + sizeof(opt.len);
+    }
+
+    if (opts->session_crypto_iv) {
+        switch (opts->session_crypto_algo)
+        {
+        case ISOUT_CRYPTO_ALGO_AES_128_CFB:
+            len += ISSHE_AES_BLOCK_SIZE + sizeof(opt.type) + sizeof(opt.len);
+            break;
+        }
+    }
+
+    if (opts->session_crypto_key) {
+        switch (opts->session_crypto_algo)
+        {
+        case ISOUT_CRYPTO_ALGO_AES_128_CFB:
+            len += ISSHE_AES_BLOCK_SIZE + sizeof(opt.type) + sizeof(opt.len);
+            break;
+        }
     }
 
     // END OPTION
@@ -215,6 +252,34 @@ isout_options_to_string(isout_options_t *opts,
             ISOUT_OPTION_DATA_LEN, sizeof(opts->data_len), &ui32);
     }
 
+    if (opts->session_crypto_algo != ISOUT_CRYPTO_ALGO_UNKNOWN) {
+        tmp += isout_option_append(
+            tmp, ISOUT_OPTION_SESSION_CRYPTO_ALGO,
+            sizeof(opts->session_crypto_algo), &opts->session_crypto_algo);
+    }
+
+    if (opts->session_crypto_iv) {
+        switch (opts->session_crypto_algo)
+        {
+        case ISOUT_CRYPTO_ALGO_AES_128_CFB:
+            tmp += isout_option_append(
+                tmp, ISOUT_OPTION_SESSION_CRYPTO_IV,
+                ISSHE_AES_BLOCK_SIZE, opts->session_crypto_iv);
+            break;
+        }
+    }
+
+    if (opts->session_crypto_key) {
+        switch (opts->session_crypto_algo)
+        {
+        case ISOUT_CRYPTO_ALGO_AES_128_CFB:
+            tmp += isout_option_append(
+                tmp, ISOUT_OPTION_SESSION_CRYPTO_KEY,
+                ISSHE_AES_BLOCK_SIZE, opts->session_crypto_key);
+            break;
+        }
+    }
+
     // END OPTION
     tmp += isout_option_append(tmp, ISOUT_OPTION_END, 0, NULL);
 
@@ -260,6 +325,19 @@ isout_options_print(isout_options_t *opts, isshe_log_t *log)
     if (opts->data_len != 0) {
         isshe_log_info(log, " - data_len: %u", opts->data_len);
     }
+
+    if (opts->session_crypto_algo) {
+        isshe_log_info(log, " - session_crypto_algo: %u", opts->session_crypto_algo);
+    }
+
+    if (opts->session_crypto_key) {
+        isshe_log_info(log, " - session_crypto_key: %s", opts->session_crypto_key);
+    }
+
+    if (opts->session_crypto_iv) {
+        isshe_log_info(log, " - session_crypto_iv: %s", opts->session_crypto_iv);
+    }
+
 
     isshe_log_info(log, "======================================");
 }

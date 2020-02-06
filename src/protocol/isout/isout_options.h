@@ -30,7 +30,10 @@ struct isout_options_s
     isshe_uint8_t       addr_type;      // 初始化为0， ISSHE_SOCKS_ADDR_TYPE_DOMAIN
     isshe_uint8_t       dname_len;      // 初始化为0
     isshe_uint8_t       ipv6_len;       // 初始化为0
-    isshe_uint32_t      data_len;  // 用户数据长度
+    isshe_uint8_t       session_crypto_algo;
+    isshe_char_t        *session_crypto_key;
+    isshe_char_t        *session_crypto_iv;    
+    isshe_uint32_t      data_len;       // 用户数据长度
 };
 
 isout_options_t *isout_options_create(isshe_mempool_t *mempool, isshe_log_t *log);

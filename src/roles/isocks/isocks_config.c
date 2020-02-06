@@ -57,8 +57,8 @@ isocks_config_print(isocks_config_t *config, isshe_log_t *log)
     isshe_log_info(log,
         "==================== isocks config ==================");
     isshe_log_info(log,
-        "- log level:file       : %d:%s",
-        config->log_level, config->log_file);
+        "- log level:file       : %s:%s",
+        isshe_log_level_to_string(config->log_level), config->log_file);
 
     for (i = 0; i < config->nin; i++) {
         isshe_log_info(log,

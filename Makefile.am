@@ -2,4 +2,5 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = \
 	lib \
-	src
+	src \
+	test

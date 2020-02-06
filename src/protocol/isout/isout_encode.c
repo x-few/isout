@@ -1,146 +1,57 @@
 
-
-
-
-
 #include "isout_encode.h"
-#include "isshe_common.h"
-#include "isout_connection.h"
-#include "isshe_aes_cfg128.h"
 
 
-int isout_opts_to_string(uint8_t *buf, isout_conn_opts_t *opts, uint64_t flag)
+isshe_int_t isout_encode_aes_cfb128(isshe_uchar_t *ckey, isshe_uchar_t *ivec,
+    isshe_char_t *data, isshe_size_t data_len, isshe_log_t *log)
 {
-    int i = 0;
+    isshe_aes_key_t     key;
+    isshe_int_t         num = 0;
+    isshe_uchar_t       ivec_cp[ISSHE_AES_BLOCK_SIZE];
 
-    // 这两个放前面！HMAC生成依赖这两个的随机性
-    i += isout_opt_append(buf + i, ISOUT_OPT_COUNT, sizeof(opts->count), opts->count);
-    i += isout_opt_append(buf + i, ISOUT_OPT_RANDOM, sizeof(opts->random), opts->random);
-    if (flag & ISOUT_OPTS_FLAG_DNAME) {
-        if (!opts->dname_len) {
-            printf("ERROR: DNAME LEN = 0!!!\n");
-            exit(0);    // TODO
-        }
-        i += isout_opt_append(buf + i, ISOUT_OPT_DOMAIN, opts->dname_len, opts->dname);
+    if (!ckey || !ivec || !data) {
+        isshe_log_error(log, "isout_encode_aes_cfb128: invalid parameters");
+        return ISSHE_FAILURE;
     }
-
-    if (flag & ISOUT_OPTS_FLAG_IPV6) {
-        if (!opts->ipv6_len) {
-            printf("ERROR: IPV6 LEN = 0!!!\n");
-            exit(0);    // TODO
-        }
-        i += isout_opt_append(buf + i, ISOUT_OPT_IPV6, opts->ipv6_len, opts->ipv6);
-    }
-
-    if (flag & ISOUT_OPTS_FLAG_IPV4) {
-        i += isout_opt_append(buf + i, ISOUT_OPT_IPV4, sizeof(opts->ipv4), opts->ipv4);
-    }
-
-    if (flag & ISOUT_OPTS_FLAG_ADDR_TYPE) {
-        i += isout_opt_append(buf + i, ISOUT_OPT_ADDR_TYPE, sizeof(opts->addr_type), opts->addr_type);
-    }
-
-    if (flag & ISOUT_OPTS_FLAG_PORT) {
-        i += isout_opt_append(buf + i, ISOUT_OPT_PORT, sizeof(opts->port), opts->port);
-    }
-
-    i += isout_opt_append(buf + i, ISOUT_OPT_END, 0, NULL);
-
-    // NOTE: padding一下
-    i += ISSHE_AES_BLOCK_SIZE - (i % ISSHE_AES_BLOCK_SIZE);
-
-    return i;
-}
-
-int isout_encode_opts(uint8_t *data, int len)
-{
-    unsigned char ckey[ISSHE_AES_BLOCK_SIZE] = "master key";
-    unsigned char ivec[ISSHE_AES_BLOCK_SIZE] = "master iv";         // NOTE: ivec这个会被改变！
-    //unsigned char ivec_cp[ISSHE_AES_BLOCK_SIZE];
-    //memcpy(ivec_cp , ivec, ISSHE_AES_BLOCK_SIZE);
-    isshe_aes_key_t key;
-    int num;
-    int index;
-    
-    assert((len % ISSHE_AES_BLOCK_SIZE) == 0);          // Note
+    //isshe_log_debug(log, "---isshe---: isout_encode_aes_cfb128--1---");
+    // copy ivec, because isshe_aes_cfb128_encrypt will change ivec
+    isshe_memcpy(ivec_cp, ivec, ISSHE_AES_BLOCK_SIZE);
+    //isshe_log_debug(log, "---isshe---: isout_encode_aes_cfb128--2---");
 
     isshe_aes_set_encrypt_key(ckey, ISSHE_AES_BLOCK_SIZE_BIT, &key);
-    for (index = 0; index < len; index += ISSHE_AES_BLOCK_SIZE) {
-        printf("num = %d, ivec = %s\n", num, ivec);
-        printf("src: %s\n", data);
-        isshe_aes_cfb128_encrypt(data + index, data + index, len, &key, ivec, &num, ISSHE_AES_ENCRYPT);
-        printf("num = %d, ivec = %s\n", num, ivec);
-        printf("encrypt: %s\n", data);
+    //isshe_log_debug(log, "---isshe---: isout_encode_aes_cfb128--3---");
+
+    //isshe_log_debug(log, "before encode: ivec = %s, data = (%d)%s", ivec_cp, data_len, data);
+    isshe_aes_cfb128_encrypt((const unsigned char *)data,
+        (unsigned char *)data, data_len, &key, ivec_cp, &num, ISSHE_AES_ENCRYPT);
+    //isshe_log_debug(log, "after encode: ivec = %s, data = (%d)%s", ivec_cp, data_len, data);
+    return ISSHE_SUCCESS;
+}
+
+static void isout_encode_test(isout_options_t *opts)
+{
+    isshe_char_t iv[] = "1234567890abcdef";
+    isshe_char_t key[] = "abcdef1234567890";
+
+    isshe_memcpy(opts->session_crypto_iv, iv, strlen(iv));
+    isshe_memcpy(opts->session_crypto_key, key, strlen(key));
+}
+
+
+isshe_int_t
+isout_encode(isout_options_t *opts, isshe_char_t *data,
+    isshe_size_t data_len, isshe_log_t *log)
+{
+    // 判断加密算法，使用相应的解密方式
+    //isshe_log_debug(log, "---isshe---: isout_encode ---1----");
+    isout_encode_test(opts);
+    if (opts->session_crypto_algo == ISOUT_CRYPTO_ALGO_AES_128_CFB) {
+        return isout_encode_aes_cfb128(
+            (unsigned char *)opts->session_crypto_key,
+            (unsigned char *)opts->session_crypto_iv, data, data_len, log);
     }
+    //isshe_log_debug(log, "---isshe---: isout_encode ---2----");
 
     return ISSHE_SUCCESS;
 }
 
-int isout_encode_data(uint8_t *data, int len)
-{
-    unsigned char ckey[ISSHE_AES_BLOCK_SIZE] = "session key";
-    unsigned char ivec[ISSHE_AES_BLOCK_SIZE] = "session iv";        // NOTE: ivec这个会被改变！
-    //unsigned char ivec_cp[ISSHE_AES_BLOCK_SIZE];
-    //memcpy(ivec_cp , ivec, ISSHE_AES_BLOCK_SIZE);
-    isshe_aes_key_t key;
-    int num = 0;
-
-    isshe_aes_set_encrypt_key(ckey, ISSHE_AES_BLOCK_SIZE_BIT, &key);
-
-    printf("num = %d, ivec = %s\n", num, ivec);
-    printf("src: %s\n", data);
-    isshe_aes_cfb128_encrypt(data, data, len, &key, ivec, &num, ISSHE_AES_ENCRYPT);
-    printf("num = %d, ivec = %s\n", num, ivec);
-    printf("encrypt: %s\n", data);
-    return ISSHE_SUCCESS;
-}
-
-int isout_encode_hmac(uint8_t *data, int len, uint8_t *result)
-{
-    uint8_t userpwd[32] = "abc";    // 实际是用户密码的md5
-    isshe_hmac_sha256(data, len, userpwd, strlen(userpwd), result); // TODO!!!
-    return ISSHE_SUCCESS;
-}
-
-// TODO 性能可能很差！多搞了两次内存复制，以及花了很多内存
-int isout_encode(isession_t *session)
-{
-    isout_conn_t *outconn = (isout_conn_t *)session->out;
-    isout_conn_t *inconn = (isout_conn_t *)session->in;
-    struct bufferevent *outbev = outconn->bev;
-    struct bufferevent *inbev = inconn->bev;
-    uint8_t opts[ISOUT_ALL_OPT_MAX_LEN];
-    uint8_t hmac[ISOUT_HMAC_LEN];
-    uint8_t *data;
-    int data_len;
-    int opts_len;
-
-    // 生成明文选项
-    memset(opts, 0, ISOUT_ALL_OPT_MAX_LEN);
-    opts_len = isout_opts_to_string(opts, &outconn->opts, outconn->opts_flag);
-
-    // 生成加密选项
-    isout_encode_opts(opts, opts_len);
-
-    assert(opts_len > ISSHE_AES_BLOCK_SIZE);
-    // 生成HMAC
-    isout_encode_hmac(opts, ISSHE_AES_BLOCK_SIZE, hmac);  // TODO: 16
-
-    // 生成加密数据
-    data_len = evbuffer_get_length(bufferevent_get_input(inbev));
-    data = (uint8_t *)malloc(data_len);
-    if (!data) {
-        printf("ERROR: malloc data error!\n");
-        exit(0);
-    }
-    bufferevent_read(inbev, data, data_len);
-    data = isout_encode_data(data, data_len);
-
-    // 转发HMAC/加密选项/加密数据
-    bufferevent_write(outbev, hmac, sizeof(hmac));
-    bufferevent_write(outbev, opts, opts_len);
-    bufferevent_write(outbev, data, data_len);
-
-    free(data);
-    return ISSHE_SUCCESS;
-}

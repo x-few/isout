@@ -10,6 +10,7 @@ iproxy_session_free(iproxy_session_t *session, isshe_int_t flag)
     if (IPROXY_SESSION_FREE_IN & flag) {
         isshe_log_debug(log, "session free: free in");
         if (session->inbev) {
+            isshe_log_debug(log, "session free: free in bev: %p", session->inbev);
             ievent_buffer_event_free(session->inbev);
             session->inbev = NULL;
         }
@@ -37,6 +38,7 @@ iproxy_session_free(iproxy_session_t *session, isshe_int_t flag)
     if (IPROXY_SESSION_FREE_OUT & flag) {
         isshe_log_debug(log, "session free: free out");
         if (session->outbev) {
+            isshe_log_debug(log, "session free: free out bev: %p", session->outbev);
             ievent_buffer_event_free(session->outbev);
             session->outbev = NULL;
         }

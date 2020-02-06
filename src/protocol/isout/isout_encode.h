@@ -1,22 +1,10 @@
 #ifndef _ISSHE_ISOUT_ENCODE_H_
 #define _ISSHE_ISOUT_ENCODE_H_
 
-#include <stdint.h>
+#include "isshe_common.h"
+#include "isout_protocol.h"
 
-//#include <event2/bufferevent.h>
-//#include <event2/buffer.h>
-
-#include "iuser.h"
-#include "isession.h"
-
-#define ISOUT_HEADER_MIN_LEN 32
-
-int isout_encode_hmac(uint8_t *data, int len, uint8_t *result);
-
-int isout_encode_opts(uint8_t *data, int len);
-
-int isout_encode_data(uint8_t *data, int len);
-
-int isout_encode(isession_t *session);
+isshe_int_t isout_encode(isout_options_t *opts,
+    isshe_char_t *data, isshe_size_t data_len, isshe_log_t *log);
 
 #endif

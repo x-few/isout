@@ -23,6 +23,8 @@ isout_out_SOURCES = \
 	base/iconfig.c \
 	protocol/isout/isout_options.c \
 	protocol/isout/isout_protocol.c \
+	protocol/isout/isout_encode.c \
+	protocol/isout/isout_decode.c \
 	roles/imaster/imaster_process.c \
 	roles/imaster/imaster_signal.c \
 	roles/imaster/imaster.c \

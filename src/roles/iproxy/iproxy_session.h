@@ -19,7 +19,10 @@ struct iproxy_session_s
     isshe_char_t            *inbuf;
     isshe_size_t            inbuf_len;
     isshe_size_t            inbuf_used_len;
+    isshe_size_t            stropts_len;
     isshe_mempool_t         *mempool;
+    isshe_uchar_t           in_read_opts:1;
+    //isshe_uchar_t           in_read_data:1;
 };
 
 void iproxy_session_free(iproxy_session_t *session, isshe_int_t flag);

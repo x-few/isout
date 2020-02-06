@@ -1,8 +1,10 @@
 #ifndef _ISSHE_ISOUT_DECODE_H_
 #define _ISSHE_ISOUT_DECODE_H_
 
-#include "isession.h"
+#include "isshe_common.h"
+#include "isout_protocol.h"
 
-int isout_decode(isession_t *session);
+isshe_int_t isout_decode(isout_options_t *opts,
+    isshe_char_t *data, isshe_size_t data_len, isshe_log_t *log);
 
 #endif

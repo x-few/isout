@@ -20,6 +20,8 @@ struct isocks_session_s
     isshe_char_t            *outbuf;
     isshe_size_t            outbuf_len;
     isshe_size_t            outbuf_used_len;
+    isshe_size_t            outbuf_used_start;
+    isshe_size_t            stropts_len;
     isocks_socks5_info_t    socks5;         // 保存socks5的信息
 };
 

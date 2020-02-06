@@ -51,7 +51,7 @@ iproxy_config_print(iproxy_config_t *config, isshe_log_t *log)
         "==================== iproxy config ==================");
     isshe_log_info(log,
         "- log level:file       : %d:%s",
-        config->log_level, config->log_file);
+        isshe_log_level_to_string(config->log_level), config->log_file);
 
     for (i = 0; i < config->nin; i++) {
         isshe_log_info(log,

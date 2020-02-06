@@ -12,6 +12,20 @@
 #define ievent_buffer_event_data_cb_t   bufferevent_data_cb
 #define ievent_buffer_event_event_cb_t  bufferevent_event_cb
 
+#define IEVENT_BEV_EVENT_READING        BEV_EVENT_READING
+#define IEVENT_BEV_EVENT_WRITING        BEV_EVENT_WRITING
+#define IEVENT_BEV_EVENT_EOF            BEV_EVENT_EOF
+#define IEVENT_BEV_EVENT_ERROR          BEV_EVENT_ERROR
+#define IEVENT_BEV_EVENT_TIMEOUT        BEV_EVENT_TIMEOUT
+#define IEVENT_BEV_EVENT_CONNECTED      BEV_EVENT_CONNECTED
+
+#define IEVENT_TIMEOUT                  EV_TIMEOUT
+#define IEVENT_READ                     EV_READ
+#define IEVENT_WRITE                    EV_WRITE
+#define IEVENT_SIGNAL                   EV_SIGNAL
+
+#define IEVENT_BUFFER_MAX_READ	        4096
+
 typedef struct event_base           ievent_base_t;
 typedef struct evconnlistener       ievent_conn_listener_t;
 typedef struct bufferevent          ievent_buffer_event_t;

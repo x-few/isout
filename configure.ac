@@ -38,7 +38,10 @@ AC_CHECK_FUNCS([inet_ntoa memset])
 
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
-                 src/Makefile])
+                 src/Makefile
+                 test/Makefile
+                 test/protocol/Makefile
+                 test/protocol/isout/Makefile])
 
 ISOUT_CONFIG_FILES([lib/openssl/config])
 
