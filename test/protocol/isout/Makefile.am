@@ -18,8 +18,8 @@ bin_PROGRAMS = \
 
 
 test_isout_encode_decode_out_SOURCES = \
-	$(top_srcdir)/test/protocol/isout/test_isout_encode_decode.c \
-	$(top_srcdir)/src/protocol/isout/isout_decode.c \
-	$(top_srcdir)/src/protocol/isout/isout_encode.c
+	test_isout_encode_decode.c \
+	../../../src/protocol/isout/isout_decode.c \
+	../../../src/protocol/isout/isout_encode.c
 
 

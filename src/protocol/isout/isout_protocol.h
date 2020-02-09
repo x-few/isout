@@ -50,7 +50,6 @@ typedef enum
 
 typedef enum
 {
-    ISOUT_OPTION_COUNT,
     ISOUT_OPTION_RANDOM,
     ISOUT_OPTION_DATA_PROTOCOL,
     ISOUT_OPTION_DATA_LEN,

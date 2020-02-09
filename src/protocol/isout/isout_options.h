@@ -24,7 +24,7 @@ typedef struct isout_protocol_options_s isout_protocol_options_t;
 
 struct isout_protocol_options_s
 {
-    isshe_uint64_t      count;          // 计数器，初始化为0
+    //isshe_uint64_t      count;          // 计数器，初始化为0
     isshe_uint32_t      random;         // 随机数, 初始化为0
     isshe_char_t        *dname;         // domain name
     isshe_char_t        *ipv6;          // 初始化为NULL

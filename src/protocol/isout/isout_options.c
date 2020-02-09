@@ -76,9 +76,6 @@ isout_protocol_options_from_string(
         opt = (isout_protocol_option_t *)(stropts + index);
         switch (opt->type)
         {
-        case ISOUT_OPTION_COUNT:
-            options->count = ntohll(*(uint64_t *)opt->data);
-            break;
         case ISOUT_OPTION_RANDOM:
             options->random = ntohl(*(uint32_t *)opt->data);
             break;
@@ -144,11 +141,6 @@ isshe_int_t isout_protocol_options_len(isout_protocol_options_t *opts)
     isout_protocol_option_t opt;
 
     len = 0;
-    if (opts->count != 0) {
-        len += sizeof(opts->count)
-            + sizeof(opt.type) + sizeof(opt.len);
-    }
-
     if (opts->random != 0) {
         len += sizeof(opts->random)
             + sizeof(opt.type) + sizeof(opt.len);
@@ -227,7 +219,6 @@ isout_protocol_options_to_string(
     //isout_protocol_option_t     opt;
     isshe_uint16_t              ui16;
     isshe_uint32_t              ui32;
-    isshe_uint64_t              ui64;
 
     len = isout_protocol_options_len(opts);
     if (len == 0 || len > ISOUT_PROTOCOL_OPTIONS_LEN_MAX) {
@@ -236,13 +227,6 @@ isout_protocol_options_to_string(
     }
 
     tmp = stropts;
-    // 进行tostring
-    if (opts->count != 0) {
-        ui64 = htonll(opts->count);
-        tmp += isout_option_append(tmp,
-            ISOUT_OPTION_COUNT, sizeof(opts->count), &ui64);
-    }
-
     if (opts->random != 0) {
         ui32 = htonl(opts->random);
         tmp += isout_option_append(tmp,
@@ -324,9 +308,6 @@ isout_protocol_options_print(isout_protocol_options_t *opts, isshe_log_t *log)
 {
     isshe_log_info(log, "======================================");
     isshe_log_info(log, "isout options: ");
-    if (opts->count != 0) {
-        isshe_log_info(log, " - count: %d", opts->count);
-    }
 
     if (opts->random != 0) {
         isshe_log_info(log, " - random: %lld", opts->random);
@@ -416,8 +397,8 @@ isout_protocol_send_opts_generate(
         }
 
         // TODO 填充key/iv
-        isshe_memcpy(key, "abcdef1234567890", 16);
-        isshe_memcpy(iv, "1234567890abcdef", 16);
+        isshe_memcpy(key, "abcdef1234567890", ISSHE_AES_BLOCK_SIZE);
+        isshe_memcpy(iv, "1234567890abcdef", ISSHE_AES_BLOCK_SIZE);
 
         all->session_crypto_algo = ISOUT_CRYPTO_ALGO_AES_128_CFB;
         all->session_crypto_key = key;
