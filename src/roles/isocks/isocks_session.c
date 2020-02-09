@@ -34,16 +34,14 @@ isocks_session_free(isocks_session_t *session, isshe_int_t flag)
             session->outconn = NULL;
         }
 
-        if (session->outopts) {
-            isout_options_destroy(session->outopts, session->mempool);
-            session->outopts = NULL;
+        if (session->outhdr) {
+            isout_protocol_header_destroy(session->outhdr,session->mempool);
+            session->outhdr = NULL;
         }
 
-        if (session->outbuf) {
-            isshe_mpfree(session->mempool, session->outbuf, session->outbuf_len);
-            session->outbuf = NULL;
-            session->outbuf_len = 0;
-            session->outbuf_used_len = 0;
+        if (session->outopts) {
+            isout_protocol_options_destroy(session->outopts, session->mempool);
+            session->outopts = NULL;
         }
     }
 

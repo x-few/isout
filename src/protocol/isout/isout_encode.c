@@ -28,7 +28,8 @@ isshe_int_t isout_encode_aes_cfb128(isshe_uchar_t *ckey, isshe_uchar_t *ivec,
     return ISSHE_SUCCESS;
 }
 
-static void isout_encode_test(isout_options_t *opts)
+/*
+static void isout_encode_test(isout_protocol_options_t *opts)
 {
     isshe_char_t iv[] = "1234567890abcdef";
     isshe_char_t key[] = "abcdef1234567890";
@@ -36,19 +37,20 @@ static void isout_encode_test(isout_options_t *opts)
     isshe_memcpy(opts->session_crypto_iv, iv, strlen(iv));
     isshe_memcpy(opts->session_crypto_key, key, strlen(key));
 }
+*/
 
 
 isshe_int_t
-isout_encode(isout_options_t *opts, isshe_char_t *data,
-    isshe_size_t data_len, isshe_log_t *log)
+isout_encode(isshe_int_t algo, isshe_char_t *key, isshe_char_t *iv,
+    isshe_char_t *data, isshe_int_t data_len, isshe_log_t *log)
 {
     // 判断加密算法，使用相应的解密方式
     //isshe_log_debug(log, "---isshe---: isout_encode ---1----");
-    isout_encode_test(opts);
-    if (opts->session_crypto_algo == ISOUT_CRYPTO_ALGO_AES_128_CFB) {
+    //isout_encode_test(opts);
+    if (algo == ISOUT_CRYPTO_ALGO_AES_128_CFB) {
         return isout_encode_aes_cfb128(
-            (unsigned char *)opts->session_crypto_key,
-            (unsigned char *)opts->session_crypto_iv, data, data_len, log);
+            (unsigned char *)key,
+            (unsigned char *)iv, data, data_len, log);
     }
     //isshe_log_debug(log, "---isshe---: isout_encode ---2----");
 

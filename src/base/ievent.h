@@ -25,6 +25,7 @@
 #define IEVENT_SIGNAL                   EV_SIGNAL
 
 #define IEVENT_BUFFER_MAX_READ	        4096
+#define IEVENT_BUFFER_MAX_READ_HALF     2048
 
 typedef struct event_base           ievent_base_t;
 typedef struct evconnlistener       ievent_conn_listener_t;

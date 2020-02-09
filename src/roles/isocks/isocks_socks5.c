@@ -34,7 +34,7 @@ socks5_selction_message_process(ievent_buffer_event_t *bev, isshe_log_t *log)
         isshe_log_debug(log,
             "waiting for more socks5 selection request data: expect %d, got %d",
             sizeof(isocks_socks5_selection_request_t), len);
-        return ISSHE_SUCCESS;
+        return ISSHE_RETRY;
     }
 
     ievent_buffer_event_read(bev, &request, sizeof(isocks_socks5_selection_request_t));
@@ -60,7 +60,6 @@ socks5_connect_cmd_process(ievent_buffer_event_t *bev,
     isshe_size_t            len;
 
     // request cmd
-    isshe_log_debug(log, "socks5 request addr type = %d", request->atype);
     switch (request->atype)
     {
         case ISOCKS_SOCKS5_ADDR_TYPE_DOMAIN:
@@ -113,7 +112,8 @@ socks5_bind_cmd_process()
 
 isshe_int_t
 socks5_request_process(ievent_buffer_event_t *bev,
-    isshe_connection_t *conn, isshe_log_t *log, isocks_socks5_info_t *info)
+    isshe_connection_t *conn, isshe_log_t *log,
+    isocks_socks5_info_t *info)
 {
     isshe_size_t            len;
     isocks_socks5_request_t request;
@@ -122,7 +122,7 @@ socks5_request_process(ievent_buffer_event_t *bev,
     len = ievent_buffer_get_length(ievent_buffer_event_get_input(bev));
     if (len < sizeof(isocks_socks5_request_t)) {
         isshe_log_debug(log, "waiting for more socks5 request data");
-        return ISSHE_SUCCESS;
+        return ISSHE_RETRY;
     }
 
     ievent_buffer_event_read(bev, &request, sizeof(isocks_socks5_request_t));
@@ -131,6 +131,7 @@ socks5_request_process(ievent_buffer_event_t *bev,
         return ISSHE_FAILURE;
     }
 
+    isshe_log_debug(log, "!!!!socks5 request addr type = %d!!!!", request.atype);
     switch (request.cmd) {
         case ISOCKS_SOCKS5_CMD_CONNECT:
             return socks5_connect_cmd_process(bev, &request, conn, log, info);
@@ -142,5 +143,16 @@ socks5_request_process(ievent_buffer_event_t *bev,
             break;
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_FAILURE;
+}
+
+void isocks_socks5_info_print(
+    isocks_socks5_info_t *info, isshe_log_t *log)
+{
+    isshe_log_info(log, "--------------------------------------");
+    isshe_log_info(log, "addr type      : %d", info->addr_type);
+    isshe_log_info(log, "addr text      : (%d)%s",
+        info->addr_len, info->addr_text);
+    isshe_log_info(log, "addr type      : %d", info->port);
+    isshe_log_info(log, "--------------------------------------");
 }

@@ -10,18 +10,19 @@ typedef struct iproxy_session_s iproxy_session_t;
 
 struct iproxy_session_s
 {
-    isshe_connection_t      *inconn;
-    isshe_connection_t      *outconn;
-    ievent_buffer_event_t   *inbev;
-    ievent_buffer_event_t   *outbev;
-    iproxy_config_t         *config;
-    isout_options_t         *inopts;
-    isshe_char_t            *inbuf;
-    isshe_size_t            inbuf_len;
-    isshe_size_t            inbuf_used_len;
-    isshe_size_t            stropts_len;
-    isshe_mempool_t         *mempool;
-    isshe_uchar_t           in_read_opts:1;
+    isshe_connection_t          *inconn;
+    isshe_connection_t          *outconn;
+    ievent_buffer_event_t       *inbev;
+    ievent_buffer_event_t       *outbev;
+    iproxy_config_t             *config;
+    isout_protocol_header_t     *inhdr;
+    isout_protocol_options_t    *inopts;
+    //isshe_char_t                *inbuf;
+    //isshe_int_t                 inbuf_len;
+    //isshe_int_t                 inbuf_used_len;
+    //isshe_int_t                 stropts_len;
+    isshe_mempool_t             *mempool;
+    //isshe_uchar_t               in_read_opts:1;
     //isshe_uchar_t           in_read_data:1;
 };
 

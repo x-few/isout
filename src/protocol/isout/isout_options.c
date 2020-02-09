@@ -1,46 +1,79 @@
-#include "isout_protocol.h"
+#include "isout_options.h"
 
-isout_options_t *
-isout_options_create(isshe_mempool_t *mempool, isshe_log_t *log)
+isout_protocol_options_t *
+isout_protocol_options_create(isshe_mempool_t *mempool, isshe_log_t *log)
 {
-    isout_options_t *opts;
+    isout_protocol_options_t *opts;
 
-    opts = isshe_mpalloc(mempool, sizeof(isout_options_t));
+    opts = isshe_mpalloc(mempool, sizeof(isout_protocol_options_t));
     if (!opts) {
         isshe_log_alert(log, "mpalloc isout options failed");
         return NULL;
     }
 
     // init
-    isshe_memzero(opts, sizeof(isout_options_t));
+    isshe_memzero(opts, sizeof(isout_protocol_options_t));
 
     return opts;
 }
 
 
-void isout_options_destroy(isout_options_t *opts, isshe_mempool_t *mempool)
+void isout_protocol_options_destroy(
+    isout_protocol_options_t *opts, isshe_mempool_t *mempool)
 {
-    isshe_mpfree(mempool, opts, sizeof(isout_options_t));
+    isshe_mpfree(mempool, opts, sizeof(isout_protocol_options_t));
+}
+
+isout_protocol_header_t *
+isout_protocol_header_create(isshe_mempool_t *mempool, isshe_log_t *log)
+{
+    isout_protocol_header_t *opts;
+
+    opts = isshe_mpalloc(mempool, sizeof(isout_protocol_header_t));
+    if (!opts) {
+        isshe_log_alert(log, "mpalloc isout header failed");
+        return NULL;
+    }
+
+    // init
+    isshe_memzero(opts, sizeof(isout_protocol_header_t));
+
+    return opts;
 }
 
 
+void isout_protocol_header_destroy(
+    isout_protocol_header_t *opts, isshe_mempool_t *mempool)
+{
+    isshe_mpfree(mempool, opts, sizeof(isout_protocol_header_t));
+}
+
+
+
 isshe_int_t
-isout_options_from_string(
-    isout_options_t *options,
-    isshe_char_t *options_str,
+isout_protocol_options_from_string(
+    isout_protocol_options_t *options,
+    isshe_char_t *stropts,
+    isshe_int_t stropts_len,
     isshe_mempool_t *mempool,
     isshe_log_t *log)
 {
-    isout_option_t  *opt;
-    isshe_int_t     index;
+    isout_protocol_option_t     *opt;
+    isshe_int_t                 index;
 
-    if (!options || !options_str) {
-        isshe_log_alert(log, "parse isout options failed: invalid parameters");
+    if (!options || !stropts) {
+        isshe_log_alert(log, "options from string: invalid parameters");
+        return ISSHE_FAILURE;
+    }
+
+    // 检查是否是完整的选项
+    if (!isout_protocol_options_is_valid(stropts, stropts_len)) {
+        isshe_log_alert(log, "invalid isout protocol options");
         return ISSHE_FAILURE;
     }
 
     do {
-        opt = (isout_option_t *)(options_str + index);
+        opt = (isout_protocol_option_t *)(stropts + index);
         switch (opt->type)
         {
         case ISOUT_OPTION_COUNT:
@@ -105,10 +138,10 @@ isout_options_from_string(
 }
 
 
-isshe_int_t isout_options_len(isout_options_t *opts)
+isshe_int_t isout_protocol_options_len(isout_protocol_options_t *opts)
 {
     isshe_int_t len;
-    isout_option_t opt;
+    isout_protocol_option_t opt;
 
     len = 0;
     if (opts->count != 0) {
@@ -181,28 +214,25 @@ isshe_int_t isout_options_len(isout_options_t *opts)
 }
 
 
-isshe_char_t *
-isout_options_to_string(isout_options_t *opts,
-    isshe_mempool_t *mempool, isshe_size_t *stropts_len)
+isshe_int_t
+isout_protocol_options_to_string(
+    isout_protocol_options_t *opts,
+    isshe_char_t *stropts,
+    isshe_int_t *stropts_len,
+    isshe_log_t *log)
 {
     // 计算所有OPTION长度
-    isshe_int_t     len;
-    isshe_char_t    *stropts;
-    isshe_char_t    *tmp;
-    isout_option_t  opt;
-    isshe_uint16_t  ui16;
-    isshe_uint32_t  ui32;
-    isshe_uint64_t  ui64;
-    
-    len = isout_options_len(opts);
-    if (len == 0) {
-        return NULL;
-    }
+    isshe_int_t                 len;
+    isshe_char_t                *tmp;
+    //isout_protocol_option_t     opt;
+    isshe_uint16_t              ui16;
+    isshe_uint32_t              ui32;
+    isshe_uint64_t              ui64;
 
-    // 分配内存
-    stropts = (isshe_char_t *)isshe_mpalloc(mempool, len);
-    if (!stropts) {
-        return NULL;
+    len = isout_protocol_options_len(opts);
+    if (len == 0 || len > ISOUT_PROTOCOL_OPTIONS_LEN_MAX) {
+        isshe_log_error(log, "isout protocol options length = %d", len);
+        return ISSHE_FAILURE;
     }
 
     tmp = stropts;
@@ -285,12 +315,12 @@ isout_options_to_string(isout_options_t *opts,
 
     *stropts_len = len;
 
-    return stropts;
+    return ISSHE_SUCCESS;
 }
 
 
 void
-isout_options_print(isout_options_t *opts, isshe_log_t *log)
+isout_protocol_options_print(isout_protocol_options_t *opts, isshe_log_t *log)
 {
     isshe_log_info(log, "======================================");
     isshe_log_info(log, "isout options: ");
@@ -342,11 +372,11 @@ isout_options_print(isout_options_t *opts, isshe_log_t *log)
     isshe_log_info(log, "======================================");
 }
 
-isshe_size_t
-isout_options_string_len(isshe_char_t *buf, isshe_size_t buflen)
+isshe_int_t
+isout_protocol_options_string_len(isshe_char_t *buf, isshe_int_t buflen)
 {
-    isout_option_t  opt;
-    isshe_size_t    len;
+    isout_protocol_option_t  opt;
+    isshe_int_t    len;
 
     len = isout_option_find_end(buf, buflen);
     if (len == ISSHE_FAILURE) {
@@ -357,11 +387,77 @@ isout_options_string_len(isshe_char_t *buf, isshe_size_t buflen)
 }
 
 isshe_bool_t
-isout_options_is_complete(isshe_char_t *buf, isshe_size_t buflen)
+isout_protocol_options_is_valid(isshe_char_t *buf, isshe_int_t buflen)
 {
-    if (isout_options_string_len(buf, buflen) == ISSHE_FAILURE) {
+    if (isout_protocol_options_string_len(buf, buflen) == ISSHE_FAILURE) {
         return ISSHE_FALSE;
     }
 
     return ISSHE_TRUE;
+}
+
+isshe_int_t
+isout_protocol_send_opts_generate(
+    isout_protocol_options_t *send, 
+    isout_protocol_options_t *all,
+    isshe_addr_info_t *addrinfo,
+    isshe_mempool_t *mempool,
+    isshe_log_t *log)
+{
+    isshe_char_t        *key;
+    isshe_char_t        *iv;
+
+    if (!all->session_crypto_key && !all->session_crypto_iv) {
+        key = isshe_mpalloc(mempool, ISSHE_AES_BLOCK_SIZE);
+        iv = isshe_mpalloc(mempool, ISSHE_AES_BLOCK_SIZE);
+        if (!key || !iv) {
+            isshe_log_error(log, "mpalloc key or iv failed");
+            return ISSHE_FAILURE;
+        }
+
+        // TODO 填充key/iv
+        isshe_memcpy(key, "abcdef1234567890", 16);
+        isshe_memcpy(iv, "1234567890abcdef", 16);
+
+        all->session_crypto_algo = ISOUT_CRYPTO_ALGO_AES_128_CFB;
+        all->session_crypto_key = key;
+        all->session_crypto_iv = iv;
+
+        send->session_crypto_algo = all->session_crypto_algo;
+        send->session_crypto_key = all->session_crypto_key;
+        send->session_crypto_iv = all->session_crypto_iv;
+    }
+
+    if (!all->dname && addrinfo->addr_text) {
+        all->dname = addrinfo->addr_text;
+        all->dname_len = addrinfo->addr_len;
+        all->port = addrinfo->port;
+
+        send->dname = all->dname;
+        send->dname_len = all->dname_len;
+        send->port = all->port;
+    }
+
+    return ISSHE_SUCCESS;
+}
+
+void
+isout_protocol_send_opts_resume(
+    isout_protocol_options_t *send, 
+    isout_protocol_options_t *all,
+    isshe_mempool_t *mempool,
+    isshe_log_t *log)
+{
+    if (send->session_crypto_key) {
+        isshe_mpfree(mempool, all->session_crypto_key, ISSHE_AES_BLOCK_SIZE);
+        isshe_mpfree(mempool, all->session_crypto_iv, ISSHE_AES_BLOCK_SIZE);
+
+        all->session_crypto_algo = ISOUT_CRYPTO_ALGO_UNKNOWN;
+        all->session_crypto_key = NULL;
+        all->session_crypto_iv = NULL;
+
+        send->session_crypto_algo = all->session_crypto_algo;
+        send->session_crypto_key = all->session_crypto_key;
+        send->session_crypto_iv = all->session_crypto_iv;
+    }
 }

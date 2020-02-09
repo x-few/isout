@@ -10,28 +10,27 @@ iproxy_session_free(iproxy_session_t *session, isshe_int_t flag)
     if (IPROXY_SESSION_FREE_IN & flag) {
         isshe_log_debug(log, "session free: free in");
         if (session->inbev) {
-            isshe_log_debug(log, "session free: free in bev: %p", session->inbev);
+            isshe_log_debug(log,
+                "session free: free in bev: %p",session->inbev);
             ievent_buffer_event_free(session->inbev);
             session->inbev = NULL;
         }
 
         if (session->inconn) {
-            isshe_connection_free(session->config->connpool, session->inconn);
+            isshe_connection_free(
+                session->config->connpool, session->inconn);
             session->inconn = NULL;
         }
 
-        if (session->inopts) {
-            isout_options_destroy(
-                session->inopts,session->mempool);
-            session->inopts = NULL;
+        if (session->inhdr) {
+            isout_protocol_header_destroy(session->inhdr,session->mempool);
+            session->inhdr = NULL;
         }
 
-        if (session->inbuf) {
-            isshe_mpfree(session->mempool,
-                session->inbuf, session->inbuf_len);
-            session->inbuf = NULL;
-            session->inbuf_len = 0;
-            session->inbuf_used_len = 0;
+        if (session->inopts) {
+            isout_protocol_options_destroy(
+                session->inopts, session->mempool);
+            session->inopts = NULL;
         }
     }
 

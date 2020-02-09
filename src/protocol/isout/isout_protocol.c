@@ -1,5 +1,51 @@
 
 #include "isout_protocol.h"
+#include "isout_options.h"
+
+void
+isout_protocol_header_set(
+    isout_protocol_header_t *header,
+    isshe_uint16_t opts_len, isshe_uint16_t data_len)
+{
+    header->opts_len = htons(opts_len);
+    header->data_len = htons(data_len);
+}
+
+
+void isout_protocol_header_get(
+    isout_protocol_header_t *dst, isout_protocol_header_t *src)
+{
+    dst->opts_len = ntohs(src->opts_len);
+    dst->data_len = ntohs(src->data_len);
+}
+
+isshe_bool_t
+isout_protocol_header_is_valid(isout_protocol_header_t *hdr)
+{
+    isshe_int_t     tmp;
+    tmp = ntohs(hdr->opts_len);
+    if (tmp < 0 || tmp > ISOUT_PROTOCOL_OPTIONS_LEN_MAX) {
+        return ISSHE_FALSE;
+    }
+
+    tmp = ntohs(hdr->data_len);
+    if (tmp < 0 || tmp > ISOUT_PROTOCOL_DATA_LEN_MAX) {
+        return ISSHE_FALSE;
+    }
+
+    return ISSHE_TRUE;
+}
+
+void
+isout_protocol_header_print(
+    isout_protocol_header_t *header, isshe_log_t *log)
+{
+    isshe_log_info(log, "========================================");
+    isshe_log_info(log, "isout protocl header: ");
+    isshe_log_info(log, "- options length   : %d", ntohs(header->opts_len));
+    isshe_log_info(log, "- data length      : %d", ntohs(header->data_len));
+    isshe_log_info(log, "========================================");
+}
 
 
 /*
@@ -11,12 +57,12 @@
 isshe_size_t isout_option_append(isshe_char_t *buf,
     isshe_uint8_t type, isshe_uint8_t len, const void *data)
 {
-    isout_option_t *option;
+    isout_protocol_option_t *option;
     if (!buf) {
         return ISSHE_FAILURE;
     }
 
-    option = (isout_option_t *)buf;
+    option = (isout_protocol_option_t *)buf;
     option->type = type;
     option->len = len;
     if (len) {
@@ -36,12 +82,12 @@ isout_option_init_with_end(isshe_char_t *buf)
 isshe_int_t isout_option_find(isshe_char_t *buf,
     isshe_size_t buflen, isshe_uint8_t type)
 {
-    isshe_int_t     i;
-    isout_option_t  *option;
+    isshe_int_t                 i;
+    isout_protocol_option_t     *option;
 
     i = 0;
     while(i < buflen) {
-        option = (isout_option_t *)(buf + i);
+        option = (isout_protocol_option_t *)(buf + i);
         if (option->type == type) {
             return i;
         } else if (option->type == ISOUT_OPTION_END) {

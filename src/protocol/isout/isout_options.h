@@ -17,9 +17,12 @@
 
 #define ISOUT_OPTIONS_STRING_LEN_MAX        1024
 
-typedef struct isout_options_s isout_options_t;
+#define ISOUT_PROTOCOL_OPTIONS_LEN_MAX      1024
+#define ISOUT_PROTOCOL_DATA_LEN_MAX         4096
 
-struct isout_options_s
+typedef struct isout_protocol_options_s isout_protocol_options_t;
+
+struct isout_protocol_options_s
 {
     isshe_uint64_t      count;          // 计数器，初始化为0
     isshe_uint32_t      random;         // 随机数, 初始化为0
@@ -36,22 +39,56 @@ struct isout_options_s
     isshe_uint32_t      data_len;       // 用户数据长度
 };
 
-isout_options_t *isout_options_create(isshe_mempool_t *mempool, isshe_log_t *log);
-void isout_options_destroy(isout_options_t *opts, isshe_mempool_t *mempool);
-
-isshe_int_t isout_options_from_string(
-    isout_options_t *options, isshe_char_t *options_str,
+isout_protocol_options_t *isout_protocol_options_create(
     isshe_mempool_t *mempool, isshe_log_t *log);
 
+void isout_protocol_options_destroy(
+    isout_protocol_options_t *opts,
+    isshe_mempool_t *mempool);
 
-isshe_char_t *isout_options_to_string(isout_options_t *opts,
-    isshe_mempool_t *mempool, isshe_size_t *stropts_len);
+isout_protocol_header_t *isout_protocol_header_create(
+    isshe_mempool_t *mempool, isshe_log_t *log);
 
-isshe_size_t isout_options_string_len(isshe_char_t *buf, isshe_size_t buflen);
-isshe_int_t isout_options_len(isout_options_t *opts);
+void isout_protocol_header_destroy(
+    isout_protocol_header_t *opts,
+    isshe_mempool_t *mempool);
 
-isshe_bool_t isout_options_is_complete(isshe_char_t *buf, isshe_size_t buflen);
+isshe_int_t isout_protocol_options_from_string(
+    isout_protocol_options_t *options, 
+    isshe_char_t *stropts,
+    isshe_int_t stropts_len,
+    isshe_mempool_t *mempool,
+    isshe_log_t *log);
 
-void isout_options_print(isout_options_t *opts, isshe_log_t *log);
+isshe_int_t
+isout_protocol_options_to_string(
+    isout_protocol_options_t *opts,
+    isshe_char_t *stropts,
+    isshe_int_t *stropts_len,
+    isshe_log_t *log);
 
+isshe_int_t isout_protocol_options_string_len(
+    isshe_char_t *buf, isshe_int_t buflen);
+
+isshe_int_t isout_protocol_options_len(
+    isout_protocol_options_t *opts);
+
+isshe_bool_t isout_protocol_options_is_valid(
+    isshe_char_t *buf, isshe_int_t buflen);
+
+void isout_protocol_options_print(
+    isout_protocol_options_t *opts, isshe_log_t *log);
+
+isshe_int_t isout_protocol_send_opts_generate(
+    isout_protocol_options_t *send, 
+    isout_protocol_options_t *all,
+    isshe_addr_info_t *socks5,
+    isshe_mempool_t *mempool,
+    isshe_log_t *log);
+
+void isout_protocol_send_opts_resume(
+    isout_protocol_options_t *send, 
+    isout_protocol_options_t *all,
+    isshe_mempool_t *mempool,
+    isshe_log_t *log);
 #endif

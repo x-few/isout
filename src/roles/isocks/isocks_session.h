@@ -10,19 +10,16 @@ typedef struct isocks_session_s isocks_session_t;
 
 struct isocks_session_s
 {
-    isshe_connection_t      *inconn;
-    isshe_connection_t      *outconn;
-    ievent_buffer_event_t   *inbev;
-    ievent_buffer_event_t   *outbev;
-    isocks_config_t         *config;
-    isshe_mempool_t         *mempool;
-    isout_options_t         *outopts;       // out的isout协议的选项
-    isshe_char_t            *outbuf;
-    isshe_size_t            outbuf_len;
-    isshe_size_t            outbuf_used_len;
-    isshe_size_t            outbuf_used_start;
-    isshe_size_t            stropts_len;
-    isocks_socks5_info_t    socks5;         // 保存socks5的信息
+    isshe_connection_t          *inconn;
+    isshe_connection_t          *outconn;
+    ievent_buffer_event_t       *inbev;
+    ievent_buffer_event_t       *outbev;
+    isocks_config_t             *config;
+    isshe_mempool_t             *mempool;
+    isout_protocol_header_t     *outhdr;
+    isout_protocol_options_t    *outopts;       // out的isout协议的选项
+    isocks_socks5_info_t        socks5;         // 保存socks5的信息
+    isshe_int_t                 read_count;
 };
 
 void isocks_session_free(isocks_session_t *session, isshe_int_t flag);

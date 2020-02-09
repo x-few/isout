@@ -7,41 +7,49 @@
 
 // 标准
 #include "isshe_common.h"
-#include "isout_options.h"
+//#include "isout_options.h"
 
 #define ISOUT_ALL_OPT_MAX_LEN       1024
 #define ISOUT_HMAC_LEN              32
 
 /*
-+------------+----------+----------+
-| 消息验证码 | 协议选项 | 加密数据 |
-+------------+----------+----------+
++------------+------------+-------+
+| 固定协议头部 | 可变协议选项 |  数据  |
++------------+------------+-------+
 */
 
-typedef struct isout_option_s isout_option_t;
-typedef enum isout_opt_e isout_option_e;
+typedef struct isout_protocol_header_s isout_protocol_header_t;
+typedef struct isout_protocol_option_s isout_protocol_option_t;
 
-struct isout_option_s{
+struct isout_protocol_header_s
+{
+    isshe_uint16_t  opts_len;
+    isshe_uint16_t  data_len;
+};
+
+struct isout_protocol_option_s{
     isshe_uint8_t type;
     isshe_uint8_t len;
     isshe_uint8_t data[0];
 };
 
-enum isout_status_e
+typedef enum
 {
     ISOUT_STATUS_UNKNOWN = 0,
     ISOUT_STATUS_CONNECTED = 1,
-    ISOUT_STATUS_READ_OPTS = 2,
-    ISOUT_STATUS_READ_DATA = 3,
-};
+    ISOUT_STATUS_READ_HDR = 2,
+    ISOUT_STATUS_READ_OPTS = 3,
+    ISOUT_STATUS_READ_DATA = 4,
+}isout_protocol_status_e;
 
-enum isout_crypto_algo_e
+typedef enum
 {
     ISOUT_CRYPTO_ALGO_UNKNOWN = 0,
     ISOUT_CRYPTO_ALGO_AES_128_CFB = 1,
-};
+} isout_crypto_algo_e;
 
-enum isout_opt_e {
+typedef enum
+{
     ISOUT_OPTION_COUNT,
     ISOUT_OPTION_RANDOM,
     ISOUT_OPTION_DATA_PROTOCOL,
@@ -58,7 +66,20 @@ enum isout_opt_e {
     ISOUT_OPTION_SESSION_CRYPTO_KEY,
     ISOUT_OPTION_SESSION_CRYPTO_IV,
     ISOUT_OPTION_END = 255,
-};
+} isout_option_e;
+
+void isout_protocol_header_set(
+    isout_protocol_header_t *header,
+    isshe_uint16_t data_len, isshe_uint16_t opts_len);
+
+void isout_protocol_header_get(
+    isout_protocol_header_t *dst, isout_protocol_header_t *src);
+
+isshe_bool_t
+isout_protocol_header_is_valid(isout_protocol_header_t *hdr);
+
+void isout_protocol_header_print(
+    isout_protocol_header_t *header, isshe_log_t *log);
 
 isshe_size_t isout_option_append(isshe_char_t *buf,
     isshe_uint8_t type, isshe_uint8_t len, const void *data);
