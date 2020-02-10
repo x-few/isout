@@ -208,7 +208,6 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
 
         isshe_debug_print_addr(
             (struct sockaddr *)session->outconn->sockaddr, log);
-        
 
         // 读数据
         if (conn->status == ISOUT_STATUS_READ_DATA) {
