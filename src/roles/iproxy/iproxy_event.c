@@ -58,6 +58,7 @@ iproxy_event_transfer_data(ievent_buffer_event_t *dstbev,
 }
 
 
+// TODO 区分地址类型
 isshe_int_t
 iproxy_connect_to_out(iproxy_session_t *session,
     isshe_connection_t *outconn, isshe_log_t *log)
@@ -72,7 +73,7 @@ iproxy_connect_to_out(iproxy_session_t *session,
             return ISSHE_FAILURE;
         }
         isshe_memcpy(outconn->addr_text,
-            session->inopts->dname,session->inopts->dname_len);
+            session->inopts->dname, session->inopts->dname_len);
         outconn->addr_text[session->inopts->dname_len] = '\0';
 
         outconn->sockaddr = isshe_mpalloc(session->mempool, sizeof(isshe_sockaddr_t));
@@ -84,6 +85,8 @@ iproxy_connect_to_out(iproxy_session_t *session,
         isshe_log_debug(log, "outconn->addr_text = (%d)%s",
             strlen(outconn->addr_text), outconn->addr_text);
 
+        // TODO 类型！ISSHE_CONN_ADDR_TYPE_DOMAIN
+        // 当前只处理了域名的
         if (isshe_conn_addr_pton(outconn->addr_text,
         ISSHE_CONN_ADDR_TYPE_DOMAIN, outconn->sockaddr,
         &outconn->socklen) == ISSHE_FAILURE) {
@@ -353,7 +356,7 @@ void iproxy_event_in_event_cb(
 
     assert(bev == session->inbev);
 
-	if (what & (BEV_EVENT_EOF|BEV_EVENT_ERROR)) {
+    if (what & (BEV_EVENT_EOF|BEV_EVENT_ERROR)) {
         if (what & BEV_EVENT_ERROR) {
             if (errno) {
                 isshe_log_alert_errno(log, errno, "in connection error");
@@ -396,7 +399,7 @@ static void iproxy_event_out_event_cb(
 
     assert(bev == session->outbev);
 
-	if (what & (BEV_EVENT_EOF|BEV_EVENT_ERROR)) {
+    if (what & (BEV_EVENT_EOF|BEV_EVENT_ERROR)) {
         if (what & BEV_EVENT_ERROR) {
             if (errno) {
                 isshe_log_alert_errno(log, errno, "out connection error, bev = %p", bev);

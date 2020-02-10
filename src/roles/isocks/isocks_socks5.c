@@ -131,7 +131,12 @@ socks5_request_process(ievent_buffer_event_t *bev,
         return ISSHE_FAILURE;
     }
 
-    isshe_log_debug(log, "!!!!socks5 request addr type = %d!!!!", request.atype);
+    // TODO 支持多地址类型
+    if (request.atype != ISOCKS_SOCKS5_ADDR_TYPE_DOMAIN) {
+        isshe_log_warning(log, "no support socks5 request addr type(%d)", request.atype);
+        return ISSHE_FAILURE;
+    }
+
     switch (request.cmd) {
         case ISOCKS_SOCKS5_CMD_CONNECT:
             return socks5_connect_cmd_process(bev, &request, conn, log, info);
