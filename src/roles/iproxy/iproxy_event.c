@@ -89,7 +89,7 @@ iproxy_connect_to_out(iproxy_session_t *session,
         // 当前只处理了域名的
         if (isshe_conn_addr_pton(outconn->addr_text,
         ISSHE_CONN_ADDR_TYPE_DOMAIN, outconn->sockaddr,
-        &outconn->socklen) == ISSHE_FAILURE) {
+        &outconn->socklen, log) == ISSHE_FAILURE) {
             isshe_log_alert(log, "convert addr string to socksaddr failed: %s", outconn->addr_text);
             return ISSHE_FAILURE;
         }

@@ -100,7 +100,7 @@ iconfig_connection_parse(isshe_mempool_t *mempool,
         }
         // TODO 解析成sockaddr
         if (isshe_conn_addr_pton(conn->addr_text,
-        type, conn->sockaddr, &conn->socklen) == ISSHE_FAILURE) {
+        type, conn->sockaddr, &conn->socklen, mempool->log) == ISSHE_FAILURE) {
             isshe_log_alert(mempool->log, "convert addr string to socksaddr failed");
             return NULL;
         }
