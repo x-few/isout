@@ -72,6 +72,7 @@ isout_protocol_options_from_string(
         return ISSHE_FAILURE;
     }
 
+    index = 0;
     do {
         opt = (isout_protocol_option_t *)(stropts + index);
         switch (opt->type)
