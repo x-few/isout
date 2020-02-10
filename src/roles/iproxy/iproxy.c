@@ -37,13 +37,16 @@ void iproxy_start(void *ctx)
     iproxy_config_print(iproxy_config, log);
 
     // 初始化log
+    iproxy_config->log = isshe_log_create(
+        iproxy_config->log_level, iproxy_config->log_file);
+    if (!iproxy_config->log) {
+        isshe_log_alert(log, "create iproxy log failed");
+        goto iproxy_error;
+    }
+
     if (iproxy_config->log_file) {
-        iproxy_config->log = isshe_log_create(
-            iproxy_config->log_level, iproxy_config->log_file);
         isshe_log_notice(log, "iproxy log file change to %s",
             iproxy_config->log_file);
-    } else {
-        iproxy_config->log = log;
     }
 
     // update mempool log

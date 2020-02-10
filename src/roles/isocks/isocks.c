@@ -33,16 +33,16 @@ void isocks_start(void *ctx)
     }
 
     isocks_config_print(isocks_config, log);
-
+    isocks_config->log = isshe_log_create(
+        isocks_config->log_level, isocks_config->log_file);
+    if (!isocks_config->log) {
+        isshe_log_alert(log, "create isocks log failed");
+        goto isocks_error;
+    }
     // 初始化log
     if (isocks_config->log_file) {
-        isocks_config->log = isshe_log_create(
-            isocks_config->log_level,
-            isocks_config->log_file);
         isshe_log_notice(log, "isocks log file change to %s",
             isocks_config->log_file);
-    } else {
-        isocks_config->log = log;
     }
 
     // update mempool log
