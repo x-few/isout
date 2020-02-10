@@ -12,7 +12,7 @@ void iproxy_start(void *ctx)
 
     isshe_log_notice(log, "iproxy_start: pid = %d", getpid());
 
-    iproxy_signal_init(log);
+    //iproxy_signal_init(log);
 
     // 初始化内存池
     mempool = isshe_mempool_create(IPROXY_DEFAULT_MEMPOOL_SIZE, log);

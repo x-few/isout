@@ -62,11 +62,9 @@ isshe_int_t
 iproxy_connect_to_out(iproxy_session_t *session,
     isshe_connection_t *outconn, isshe_log_t *log)
 {
-    isshe_log_debug(log, "---isshe---: in iproxy_connect_to_out---1---");
     // 连接下一跳
     if (!outconn->addr_text) {
         // TODO 区分addr_type
-        isshe_log_debug(log, "---isshe---: in iproxy_connect_to_out---2---addr type = %d", session->inopts->addr_type);
         outconn->addr_text = isshe_mpalloc(
             session->mempool, session->inopts->dname_len + 1);
         if (!outconn->addr_text) {
