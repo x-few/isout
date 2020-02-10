@@ -36,4 +36,5 @@ isout_out_SOURCES = \
 	roles/iproxy/iproxy_config.c \
 	roles/iproxy/iproxy_event.c \
 	roles/iproxy/iproxy_session.c \
+	roles/iproxy/iproxy_signal.c \
 	roles/iproxy/iproxy.c

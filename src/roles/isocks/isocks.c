@@ -92,12 +92,12 @@ void isocks_start(void *ctx)
         isshe_connpool_destroy(isocks_config->connpool);
     }
 
-    if (isocks_config->log && isocks_config->log != log) {
-        isshe_log_destroy(isocks_config->log);
-    }
-
     if (isocks_config->mempool) {
         isshe_mempool_destroy(isocks_config->mempool);
+    }
+
+    if (isocks_config->log && isocks_config->log != log) {
+        isshe_log_destroy(isocks_config->log);
     }
 
     // never return!

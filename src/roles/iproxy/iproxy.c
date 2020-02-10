@@ -12,6 +12,8 @@ void iproxy_start(void *ctx)
 
     isshe_log_notice(log, "iproxy_start: pid = %d", getpid());
 
+    iproxy_signal_init(log);
+
     // 初始化内存池
     mempool = isshe_mempool_create(IPROXY_DEFAULT_MEMPOOL_SIZE, log);
     if (!mempool) {
@@ -37,8 +39,7 @@ void iproxy_start(void *ctx)
     // 初始化log
     if (iproxy_config->log_file) {
         iproxy_config->log = isshe_log_create(
-            iproxy_config->log_level,
-            iproxy_config->log_file);
+            iproxy_config->log_level, iproxy_config->log_file);
         isshe_log_notice(log, "iproxy log file change to %s",
             iproxy_config->log_file);
     } else {
@@ -92,12 +93,12 @@ void iproxy_start(void *ctx)
         isshe_connpool_destroy(iproxy_config->connpool);
     }
 
-    if (iproxy_config->log && iproxy_config->log != log) {
-        isshe_log_destroy(iproxy_config->log);
-    }
-
     if (iproxy_config->mempool) {
         isshe_mempool_destroy(iproxy_config->mempool);
+    }
+
+    if (iproxy_config->log && iproxy_config->log != log) {
+        isshe_log_destroy(iproxy_config->log);
     }
 
     // never return!

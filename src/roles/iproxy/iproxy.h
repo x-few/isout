@@ -15,6 +15,7 @@
 #include "iproxy_config.h"
 #include "iproxy_event.h"
 #include "iproxy_session.h"
+#include "iproxy_signal.h"
 
 #define IPROXY_DEFAULT_MEMPOOL_SIZE     4096
 
