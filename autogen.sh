@@ -5,5 +5,8 @@ cd $basepath
 
 # TODO: git clone lib
 
+echo "must install autoconf automake libtool"
+
 autoreconf --install
+
 $basepath/configure

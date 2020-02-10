@@ -397,9 +397,9 @@ isout_protocol_send_opts_generate(
             return ISSHE_FAILURE;
         }
 
-        // TODO 填充key/iv
-        isshe_memcpy(key, "abcdef1234567890", ISSHE_AES_BLOCK_SIZE);
-        isshe_memcpy(iv, "1234567890abcdef", ISSHE_AES_BLOCK_SIZE);
+        // 填充key/iv
+        isshe_rand_bytes(key, ISSHE_AES_BLOCK_SIZE);
+        isshe_rand_bytes(iv, ISSHE_AES_BLOCK_SIZE);
 
         all->session_crypto_algo = ISOUT_CRYPTO_ALGO_AES_128_CFB;
         all->session_crypto_key = key;
