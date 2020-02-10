@@ -205,8 +205,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
         if (iproxy_connect_to_out(
         session, session->outconn, log) == ISSHE_FAILURE) {
             isshe_log_warning(log, "connect to out failed!!!");
-            //return ISSHE_FAILURE;         // TODO
-            return ISSHE_SUCCESS;
+            return ISSHE_FAILURE;
         }
 
         isshe_debug_print_addr(
@@ -252,8 +251,8 @@ void iproxy_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
 
     if (iproxy_event_in_transfer_data(session) == ISSHE_FAILURE) {
         // 释放连接、释放资源
-        
-        exit(0);
+        iproxy_session_free(session,
+            IPROXY_SESSION_FREE_IN | IPROXY_SESSION_FREE_OUT);
     }
 }
 
@@ -339,6 +338,8 @@ static void iproxy_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
 
     if (iproxy_event_out_transfer_data(session) == ISSHE_FAILURE) {
         // 释放资源、释放连接
+        iproxy_session_free(session,
+            IPROXY_SESSION_FREE_IN | IPROXY_SESSION_FREE_OUT);
     }
 }
 
