@@ -9,6 +9,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
+    - name: install deps
+      run: sudo apt-get install autoconf automake libtool -y
     - name: configure
       run: ./autogen.sh
     - name: make
