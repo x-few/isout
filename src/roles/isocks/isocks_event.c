@@ -265,8 +265,6 @@ void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
 
     log = session->config->log;
 
-    session->read_count++;      // TODO debug
-
     inconn = session->inconn;
     if (!inconn) {
         isshe_log_warning(log, "in read callback, but connection == NULL");
@@ -277,7 +275,10 @@ void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
     {
     case SOCKS5_STATUS_CONNECTED:
         //isocks_socks5_info_print(&session->socks5, log);
-        isocks_event_in_transfer_data(session);
+        if (isocks_event_in_transfer_data(session) == ISSHE_FAILURE) {
+            isocks_session_free(session,
+                ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
+        }
         break;
     case SOCKS5_STATUS_WAITING_SELECTION:
         ret = socks5_selction_message_process(bev, log);
@@ -318,8 +319,9 @@ void isocks_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
     isocks_session_t *session = (isocks_session_t *)ctx;
 
     if (isocks_event_out_transfer_data(session) == ISSHE_FAILURE) {
-        // TODO 禁用读写、关闭、释放连接
-        exit(0);
+        // 禁用读写、关闭、释放连接
+        isocks_session_free(session,
+            ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
     }
 }
 
@@ -330,7 +332,6 @@ void isocks_event_in_event_cb(
     isocks_session_t        *session = (isocks_session_t *)ctx;
     isshe_log_t             *log;
     ievent_buffer_event_t   *partner;
-    isshe_int_t             len;
 
     log = session->config->log;
     partner = session->outbev;
@@ -352,15 +353,7 @@ void isocks_event_in_event_cb(
 
             // partner发送过来的数据全部转发
             isocks_event_out_read_cb(partner, ctx);
-            /*
-            len = ievent_buffer_get_length(ievent_buffer_event_get_output(partner));
-            if (len) {
-                ievent_buffer_event_disable(partner, IEVENT_READ);
-            } else {
-                // free partner
-                isocks_session_free(session, ISOCKS_SESSION_FREE_OUT);
-            }
-            */
+
             isocks_session_free(session, ISOCKS_SESSION_FREE_OUT);
         }
 
@@ -374,7 +367,6 @@ void isocks_event_out_event_cb(
     isocks_session_t        *session = (isocks_session_t *)ctx;
     isshe_log_t             *log;
     ievent_buffer_event_t   *partner;
-    isshe_int_t             len;
 
     log = session->config->log;
     partner = session->inbev;
@@ -394,15 +386,7 @@ void isocks_event_out_event_cb(
 
             // partner发送过来的数据全部转发
             isocks_event_in_read_cb(partner, ctx);
-            /*
-            len = ievent_buffer_get_length(ievent_buffer_event_get_output(partner));
-            if (len) {
-                ievent_buffer_event_disable(partner, IEVENT_READ);
-            } else {
-                // free partner
-                isocks_session_free(session, ISOCKS_SESSION_FREE_IN);
-            }
-            */
+
             isocks_session_free(session, ISOCKS_SESSION_FREE_IN);
         }
 
@@ -532,7 +516,6 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
     session->outconn->mempool = mempool;
     session->outconn->data = (void *)session;
     session->outconn->status = ISOUT_STATUS_UNKNOWN;
-    session->read_count = 0;    // TODO debug
 
     ievent_buffer_event_setcb(session->inbev, isocks_event_in_read_cb, 
         NULL, isocks_event_in_event_cb, (void*)session); //->outconn);
@@ -547,7 +530,4 @@ isocks_event_accept_error:
     if (session) {
         isocks_session_free(session, ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
     }
-
-    // TODO 怎么关闭连接？
-    // ievent_connection_close(fd);
 }

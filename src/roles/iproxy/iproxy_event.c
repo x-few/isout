@@ -350,7 +350,6 @@ void iproxy_event_in_event_cb(
     iproxy_session_t        *session = (iproxy_session_t *)ctx;
     isshe_log_t             *log;
     ievent_buffer_event_t   *partner;
-    isshe_int_t             len;
 
     log = session->config->log;
     partner = session->outbev;
@@ -370,17 +369,8 @@ void iproxy_event_in_event_cb(
             
             // partner发送过来的数据全部转发
             iproxy_event_out_read_cb(partner, ctx);
-            /*
-            len = ievent_buffer_get_length(
-                ievent_buffer_event_get_output(partner));
-            if (len) {
-                ievent_buffer_event_disable(partner, EV_READ);
-            } 
-            */
-            //else {
-                // free partner
+
             iproxy_session_free(session, IPROXY_SESSION_FREE_OUT);
-            //}
         }
 
         iproxy_session_free(session, IPROXY_SESSION_FREE_IN);
@@ -393,7 +383,6 @@ static void iproxy_event_out_event_cb(
     iproxy_session_t        *session = (iproxy_session_t *)ctx;
     isshe_log_t             *log;
     ievent_buffer_event_t   *partner;
-    isshe_int_t             len;
 
     log = session->config->log;
     partner = session->inbev;
@@ -415,16 +404,9 @@ static void iproxy_event_out_event_cb(
 
             // partner发送过来的数据全部转发
             iproxy_event_in_read_cb(partner, ctx);
-            /*
-            len = ievent_buffer_get_length(ievent_buffer_event_get_output(partner));
-            if (len) {
-                ievent_buffer_event_disable(partner, EV_READ);
-            } 
-            */
-           //else {
-                // free partner
+
             iproxy_session_free(session, IPROXY_SESSION_FREE_IN);
-            //}
+
         }
 
         iproxy_session_free(session, IPROXY_SESSION_FREE_OUT);

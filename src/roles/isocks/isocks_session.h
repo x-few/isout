@@ -19,7 +19,6 @@ struct isocks_session_s
     isout_protocol_header_t     *outhdr;
     isout_protocol_options_t    *outopts;       // out的isout协议的选项
     isocks_socks5_info_t        socks5;         // 保存socks5的信息
-    isshe_int_t                 read_count;
 };
 
 void isocks_session_free(isocks_session_t *session, isshe_int_t flag);
