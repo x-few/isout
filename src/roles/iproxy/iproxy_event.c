@@ -46,22 +46,18 @@ iproxy_connect_to_out(iproxy_session_t *session,
             return ISSHE_FAILURE;
         }
 
-        //isshe_log_debug(log, "set sock port = %d", opts->port);
-        //isshe_sockaddr_port_set(outconn->sockaddr, opts->port);
         isshe_address_port_set(outconn->addr, opts->port);
-        //isshe_debug_print_addr(
-        //    (struct sockaddr *)outconn->addr->sockaddr, log);
+
+        isshe_debug_print_addr((struct sockaddr *)outconn->addr->sockaddr, log);
 
         // 连接下一跳（需要的话）
         if (iproxy_event_connect_to_next(
-        session->outbev,outconn->addr->sockaddr,
+        session->outbev, outconn->addr->sockaddr,
         outconn->addr->socklen, log) == ISSHE_FAILURE) {
             isshe_log_alert(log, "connect to xx(TODO) failed");
             return ISSHE_FAILURE;
         }
     }
-
-    isshe_debug_print_addr((struct sockaddr *)outconn->addr->sockaddr, log);
     
     return ISSHE_SUCCESS;
 }
