@@ -6,12 +6,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v2
-    - name: install deps
-      run: sudo apt-get install autoconf automake libtool -y
+    - name: pull submodule
+      run: git submodule update --init --recursive
     - name: configure
       run: ./autogen.sh
     - name: make
-      run: make
+      run: make -j4
