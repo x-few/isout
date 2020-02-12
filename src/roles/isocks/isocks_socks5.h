@@ -29,8 +29,6 @@
 #define ISOCKS_SOCKS5_REPLY_ATYPE_NOT_SUPPORTED 0x08
 // 0x09-0xff: unassigned
 
-#define isocks_socks5_info_t                        isshe_addr_info_t
-
 typedef enum isocks_socks5_status_e                 isocks_socks5_status_t;
 typedef struct isocks_socks5_selection_request_s    isocks_socks5_selection_request_t;
 typedef struct isocks_socks5_selection_reply_s      isocks_socks5_selection_reply_t;
@@ -81,9 +79,6 @@ isshe_int_t socks5_selction_message_process(
 
 isshe_int_t socks5_request_process(
     ievent_buffer_event_t *bev, isshe_connection_t *conn,
-    isshe_log_t *log, isocks_socks5_info_t *info);
-
-void isocks_socks5_info_print(
-    isocks_socks5_info_t *info, isshe_log_t *log);
+    isshe_log_t *log, isshe_address_t *addr);
 
 #endif

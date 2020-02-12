@@ -3,7 +3,8 @@
 #include "iproxy.h"
 
 isshe_int_t
-iproxy_config_parse(iproxy_config_t *config, isshe_json_t *json, isshe_log_t *log)
+iproxy_config_parse(iproxy_config_t *config,
+    isshe_json_t *json, isshe_log_t *log)
 {
     isshe_json_t *iproxy_json;
     isshe_json_t *tmp;
@@ -56,8 +57,8 @@ iproxy_config_print(iproxy_config_t *config, isshe_log_t *log)
     for (i = 0; i < config->nin; i++) {
         isshe_log_info(log,
             "- in addr              : %s:%d:%s",
-            config->inarray[i].addr_text,
-            config->inarray[i].port,
+            config->inarray[i].addr->addr,
+            config->inarray[i].addr->port,
             config->inarray[i].protocol_text);
     }
 

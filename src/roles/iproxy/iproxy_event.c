@@ -18,94 +18,51 @@ iproxy_event_connect_to_next(
     return ISSHE_SUCCESS;
 }
 
-isshe_int_t
-iproxy_event_transfer_data2(ievent_buffer_event_t *dstbev,
-    ievent_buffer_event_t *srcbev, isshe_int_t  data_len, isshe_log_t *log)
-{
-    isshe_char_t        buf[ISSHE_DEFAULT_BUFFER_LEN] = {0};
-    isshe_int_t         buf_len = ISSHE_DEFAULT_BUFFER_LEN;
-    isshe_int_t         read_len = 0;
-
-    isshe_log_debug(log, "iproxy transfer: %p -> %p: %u",
-        srcbev, dstbev, data_len);
-
-    while(data_len > 0) {
-        read_len = data_len < buf_len ? data_len : buf_len;
-        ievent_buffer_event_read(srcbev, buf, read_len);
-        ievent_buffer_event_write(dstbev, buf, read_len);
-        data_len -= read_len;
-    }
-
-    return ISSHE_SUCCESS;
-}
-
-isshe_int_t
-iproxy_event_transfer_data(ievent_buffer_event_t *dstbev,
-    ievent_buffer_event_t *srcbev, isshe_log_t *log)
-{
-    ievent_buffer_t *src, *dst;
-
-    src = ievent_buffer_event_get_input(srcbev);
-    dst = ievent_buffer_event_get_output(dstbev);
-
-    isshe_log_debug(log, "iproxy transfer: %p(%u) -> %p(%lu)",
-        srcbev, ievent_buffer_get_length(src),
-        dstbev, ievent_buffer_get_length(dst));
-
-    ievent_buffer_add_buffer(dst, src);
-
-    return ISSHE_SUCCESS;
-}
-
 
 // TODO 区分地址类型
 isshe_int_t
 iproxy_connect_to_out(iproxy_session_t *session,
     isshe_connection_t *outconn, isshe_log_t *log)
 {
+    isout_protocol_options_t    *opts;
+
+    if (!session || !outconn) {
+        isshe_log_error(log, "to out failed: invalid parameters");
+        return ISSHE_FAILURE;
+    }
+
     // 连接下一跳
-    if (!outconn->addr_text) {
-        // TODO 区分addr_type
-        outconn->addr_text = isshe_mpalloc(
-            session->mempool, session->inopts->dname_len + 1);
-        if (!outconn->addr_text) {
-            isshe_log_alert(log, "mpalloc addr_text failed");
+    if (!outconn->addr) {
+        opts = session->inopts;
+        outconn->addr = isshe_address_create(opts->addr,
+            opts->addr_len, opts->addr_type, session->mempool, log);
+        if (!outconn->addr) {
+            isshe_log_error(log, "isshe_address_create failed");
             return ISSHE_FAILURE;
         }
-        isshe_memcpy(outconn->addr_text,
-            session->inopts->dname, session->inopts->dname_len);
-        outconn->addr_text[session->inopts->dname_len] = '\0';
-
-        outconn->sockaddr = isshe_mpalloc(session->mempool, sizeof(isshe_sockaddr_t));
-        if (!outconn->sockaddr) {
-            isshe_log_alert(log, "mpalloc sockaddr failed");
+        if (!isshe_address_sockaddr_create(
+            outconn->addr, session->mempool, log)) {
+            isshe_log_error(log, "isshe_address_sockaddr_create failed");
             return ISSHE_FAILURE;
         }
 
-        isshe_log_debug(log, "outconn->addr_text = (%d)%s",
-            strlen(outconn->addr_text), outconn->addr_text);
-
-        // TODO 类型！ISSHE_CONN_ADDR_TYPE_DOMAIN
-        // 当前只处理了域名的
-        if (isshe_conn_addr_pton(outconn->addr_text,
-        ISSHE_CONN_ADDR_TYPE_DOMAIN, outconn->sockaddr,
-        &outconn->socklen, log) == ISSHE_FAILURE) {
-            isshe_log_alert(log, "convert addr string to socksaddr failed: %s", outconn->addr_text);
-            return ISSHE_FAILURE;
-        }
-
-        //isshe_log_debug(log, "set sock port = %d", session->inopts->port);
-        isshe_conn_port_set(outconn->sockaddr, session->inopts->port);
-
-        //isshe_debug_print_addr((struct sockaddr *)outconn->sockaddr, log);
+        //isshe_log_debug(log, "set sock port = %d", opts->port);
+        //isshe_sockaddr_port_set(outconn->sockaddr, opts->port);
+        isshe_address_port_set(outconn->addr, opts->port);
+        //isshe_debug_print_addr(
+        //    (struct sockaddr *)outconn->addr->sockaddr, log);
 
         // 连接下一跳（需要的话）
-        if (iproxy_event_connect_to_next(session->outbev, outconn->sockaddr,
-        outconn->socklen, log) == ISSHE_FAILURE) {
+        if (iproxy_event_connect_to_next(
+        session->outbev,outconn->addr->sockaddr,
+        outconn->addr->socklen, log) == ISSHE_FAILURE) {
             isshe_log_alert(log, "connect to xx(TODO) failed");
             return ISSHE_FAILURE;
         }
     }
+
+    isshe_debug_print_addr((struct sockaddr *)outconn->addr->sockaddr, log);
+    
     return ISSHE_SUCCESS;
 }
 
@@ -207,9 +164,6 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
             isshe_log_warning(log, "connect to out failed!!!");
             return ISSHE_FAILURE;
         }
-
-        isshe_debug_print_addr(
-            (struct sockaddr *)session->outconn->sockaddr, log);
 
         // 读数据
         if (conn->status == ISOUT_STATUS_READ_DATA) {
@@ -393,8 +347,6 @@ static void iproxy_event_out_event_cb(
         if (what & BEV_EVENT_ERROR) {
             if (errno) {
                 isshe_log_alert_errno(log, errno, "out connection error, bev = %p", bev);
-                isshe_debug_print_addr(
-                    (struct sockaddr *)session->outconn->sockaddr, log);
             }
         }
 

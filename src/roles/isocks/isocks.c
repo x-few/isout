@@ -67,16 +67,16 @@ void isocks_start(void *ctx)
     for (i = 0; i < isocks_config->nin; i++) {
         isshe_log_notice(isocks_config->log,
             "listening: %s:%d",
-            isocks_config->inarray[i].addr_text,
-            isocks_config->inarray[i].port);
+            isocks_config->inarray[i].addr->addr,
+            isocks_config->inarray[i].addr->port);
         isshe_debug_print_addr(
-            (struct sockaddr *)isocks_config->inarray[i].sockaddr,
+            (struct sockaddr *)isocks_config->inarray[i].addr->sockaddr,
             isocks_config->log);        // DEBUG!
 
         listener = ievent_listener_create(isocks_config->event,
                         isocks_event_accept_cb, (void *)isocks_config,
-                        isocks_config->inarray[i].sockaddr,
-                        isocks_config->inarray[i].socklen);
+                        isocks_config->inarray[i].addr->sockaddr,
+                        isocks_config->inarray[i].addr->socklen);
         if (!listener) {
             isshe_log_alert(isocks_config->log, "listener create failed");
             goto isocks_error;

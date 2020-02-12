@@ -71,16 +71,16 @@ void iproxy_start(void *ctx)
     for (i = 0; i < iproxy_config->nin; i++) {
         isshe_log_notice(iproxy_config->log,
             "listening: %s:%d",
-            iproxy_config->inarray[i].addr_text,
-            iproxy_config->inarray[i].port);
+            iproxy_config->inarray[i].addr->addr,
+            iproxy_config->inarray[i].addr->port);
         isshe_debug_print_addr(
-            (struct sockaddr *)iproxy_config->inarray[i].sockaddr,
+            (struct sockaddr *)iproxy_config->inarray[i].addr->sockaddr,
             iproxy_config->log);        // DEBUG!
 
         listener = ievent_listener_create(iproxy_config->event,
                         iproxy_event_accept_cb, (void *)iproxy_config,
-                        iproxy_config->inarray[i].sockaddr,
-                        iproxy_config->inarray[i].socklen);
+                        iproxy_config->inarray[i].addr->sockaddr,
+                        iproxy_config->inarray[i].addr->socklen);
         if (!listener) {
             isshe_log_alert(iproxy_config->log, "listener create failed");
             goto iproxy_error;

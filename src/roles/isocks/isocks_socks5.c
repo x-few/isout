@@ -21,6 +21,22 @@ is_valid_socks5_request(isocks_socks5_request_t *request)
     return ISSHE_TRUE;
 }
 
+static isshe_bool_t
+is_support_socks5_addr_type(isshe_uint8_t type)
+{
+    switch (type)
+    {
+    case ISOCKS_SOCKS5_ADDR_TYPE_DOMAIN:
+    case ISOCKS_SOCKS5_ADDR_TYPE_IPV4:
+    case ISOCKS_SOCKS5_ADDR_TYPE_IPV6:
+        break;
+    default:
+        return ISSHE_FALSE;
+    }
+
+    return ISSHE_TRUE;
+}
+
 isshe_int_t
 socks5_selction_message_process(ievent_buffer_event_t *bev, isshe_log_t *log)
 {
@@ -53,7 +69,7 @@ socks5_selction_message_process(ievent_buffer_event_t *bev, isshe_log_t *log)
 isshe_int_t
 socks5_connect_cmd_process(ievent_buffer_event_t *bev,
     isocks_socks5_request_t *request, isshe_connection_t *conn,
-    isshe_log_t *log, isocks_socks5_info_t *info)
+    isshe_log_t *log, isshe_address_t *addr)
 {
     isshe_mempool_t         *mempool = conn->mempool;
     isocks_socks5_reply_t   reply;
@@ -63,39 +79,40 @@ socks5_connect_cmd_process(ievent_buffer_event_t *bev,
     switch (request->atype)
     {
         case ISOCKS_SOCKS5_ADDR_TYPE_DOMAIN:
-            ievent_buffer_event_read(bev, &info->addr_len, sizeof(info->addr_len));
+            ievent_buffer_event_read(bev, &addr->addr_len, sizeof(addr->addr_len));
             break;
         case ISOCKS_SOCKS5_ADDR_TYPE_IPV4:
-            info->addr_len = ISSHE_IPV4_ADDR_LEN;
+            addr->addr_len = ISSHE_IPV4_ADDR_LEN;
             break;
         case ISOCKS_SOCKS5_ADDR_TYPE_IPV6:
-            info->addr_len = ISSHE_IPV6_ADDR_LEN;
+            addr->addr_len = ISSHE_IPV6_ADDR_LEN;
             break;
         default:
             isshe_log_warning(log, "unsupported sock5 addr type");
             return ISSHE_FAILURE;
     }
-    info->addr_type = request->atype;
+
+    addr->addr_type = request->atype;
     len = ievent_buffer_get_length(ievent_buffer_event_get_input(bev));
-    if (len < info->addr_len + sizeof(info->port)) {
+    if (len < addr->addr_len + sizeof(addr->port)) {
         isshe_log_warning(log, "expect len %d, got len %d",
-            info->addr_len + sizeof(info->port), len);
+            addr->addr_len + sizeof(addr->port), len);
         return ISSHE_FAILURE;
     }
-    info->addr_text = (isshe_char_t *)isshe_mpalloc(mempool, info->addr_len);
-    if (!info->addr_text) {
+    addr->addr = (isshe_char_t *)isshe_mpalloc(mempool, addr->addr_len);
+    if (!addr->addr) {
         isshe_log_alert(log, "mpalloc socks5 addr_text failed");
         return ISSHE_FAILURE;
     }
 
-    ievent_buffer_event_read(bev, info->addr_text, info->addr_len);
-    ievent_buffer_event_read(bev, &info->port, sizeof(info->port));
+    ievent_buffer_event_read(bev, addr->addr, addr->addr_len);
+    ievent_buffer_event_read(bev, &addr->port, sizeof(addr->port));
     // TODO IPv4 ntohs
-    info->port = ntohs(info->port);
+    addr->port = ntohs(addr->port);
 
     // reply
     isshe_memzero(&reply, sizeof(isocks_socks5_reply_t));
-    reply.version = ISOCKS_DEFAULT_SOCKS_VERSION;
+    reply.version = request->version;
     reply.atype = ISOCKS_SOCKS5_ADDR_TYPE_IPV4;
     // TODO reply.port = config->port;
     ievent_buffer_event_write(bev, &reply, sizeof(isocks_socks5_reply_t));
@@ -113,7 +130,7 @@ socks5_bind_cmd_process()
 isshe_int_t
 socks5_request_process(ievent_buffer_event_t *bev,
     isshe_connection_t *conn, isshe_log_t *log,
-    isocks_socks5_info_t *info)
+    isshe_address_t *info)
 {
     isshe_size_t            len;
     isocks_socks5_request_t request;
@@ -131,8 +148,7 @@ socks5_request_process(ievent_buffer_event_t *bev,
         return ISSHE_FAILURE;
     }
 
-    // TODO 支持多地址类型
-    if (request.atype != ISOCKS_SOCKS5_ADDR_TYPE_DOMAIN) {
+    if (!is_support_socks5_addr_type(request.atype)) {
         isshe_log_warning(log, "no support socks5 request addr type(%d)", request.atype);
         return ISSHE_FAILURE;
     }
@@ -149,15 +165,4 @@ socks5_request_process(ievent_buffer_event_t *bev,
     }
 
     return ISSHE_FAILURE;
-}
-
-void isocks_socks5_info_print(
-    isocks_socks5_info_t *info, isshe_log_t *log)
-{
-    isshe_log_info(log, "--------------------------------------");
-    isshe_log_info(log, "addr type      : %d", info->addr_type);
-    isshe_log_info(log, "addr text      : (%d)%s",
-        info->addr_len, info->addr_text);
-    isshe_log_info(log, "addr type      : %d", info->port);
-    isshe_log_info(log, "--------------------------------------");
 }

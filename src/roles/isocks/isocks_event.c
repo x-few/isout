@@ -2,45 +2,6 @@
 
 
 isshe_int_t
-isocks_event_transfer_data(ievent_buffer_event_t *dstbev,
-    ievent_buffer_event_t *srcbev, isshe_log_t *log)
-{
-    ievent_buffer_t *src, *dst;
-
-    src = ievent_buffer_event_get_input(srcbev);
-    dst = ievent_buffer_event_get_output(dstbev);
-
-    isshe_log_debug(log, "isocks transfer: %p(%u) -> %p(%lu)",
-        srcbev, ievent_buffer_get_length(src),
-        dstbev, ievent_buffer_get_length(dst));
-
-    ievent_buffer_add_buffer(dst, src);
-
-    return ISSHE_SUCCESS;
-}
-
-isshe_int_t
-isocks_event_transfer_data2(ievent_buffer_event_t *dstbev,
-    ievent_buffer_event_t *srcbev, isshe_int_t  data_len, isshe_log_t *log)
-{
-    isshe_char_t        buf[ISSHE_DEFAULT_BUFFER_LEN] = {0};
-    isshe_int_t         buf_len = ISSHE_DEFAULT_BUFFER_LEN;
-    isshe_int_t         read_len = 0;
-    
-    isshe_log_debug(log, "isocks transfer: %p -> %p: %u",
-        srcbev, dstbev, data_len);
-
-    while(data_len > 0) {
-        read_len = data_len < buf_len ? data_len : buf_len;
-        ievent_buffer_event_read(srcbev, buf, read_len);
-        ievent_buffer_event_write(dstbev, buf, read_len);
-        data_len -= read_len;
-    }
-
-    return ISSHE_SUCCESS;
-}
-
-isshe_int_t
 isocks_event_in_transfer_data(isocks_session_t *session)
 {
     isshe_char_t                stropts[ISOUT_PROTOCOL_OPTIONS_LEN_MAX];
@@ -70,10 +31,10 @@ isocks_event_in_transfer_data(isocks_session_t *session)
         //}
 
         // 生成选项
-        //isocks_socks5_info_print(&session->socks5, log);
+        //isshe_address_print(&session->inaddr, log);
         isshe_memzero(&opts, sizeof(isout_protocol_options_t));
         if (isout_protocol_send_opts_generate(&opts,
-        session->outopts, (isshe_addr_info_t *)(&session->socks5),
+        session->outopts, (isshe_address_t *)(&session->inaddr),
         session->mempool, log) == ISSHE_FAILURE) {
             goto isocks_event_in_td_error;
         }
@@ -274,7 +235,7 @@ void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
     switch (inconn->status)
     {
     case SOCKS5_STATUS_CONNECTED:
-        //isocks_socks5_info_print(&session->socks5, log);
+        //isshe_address_print(&session->inaddr, log);
         if (isocks_event_in_transfer_data(session) == ISSHE_FAILURE) {
             isocks_session_free(session,
                 ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
@@ -296,7 +257,7 @@ void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
         break;
     case SOCKS5_STATUS_WAITING_REQUEST:
         ret = socks5_request_process(
-            bev, session->inconn,log, &session->socks5);
+            bev, session->inconn, log, &session->inaddr);
         if (ret == ISSHE_FAILURE) {
             isshe_log_error(log, "socks5_request_process failed!!!");
             isocks_session_free(session,
@@ -399,18 +360,16 @@ void isocks_event_out_event_cb(
 // 方案1：现在的实现，每个连接都用新的。
 // 方案2：建立固定数量的隧道，每个连接都共用这些隧道。
 static isshe_int_t
-isocks_event_connect_to_next(ievent_buffer_event_t *evb,
-    isshe_connection_t *conn, isshe_sockaddr_t *sockaddr,
-    isshe_socklen_t socklen, isshe_log_t *log)
+isocks_event_connect_to_next(
+    ievent_buffer_event_t *evb,
+    isshe_sockaddr_t *sockaddr,
+    isshe_socklen_t socklen,
+    isshe_log_t *log)
 {
     if (ievent_buffer_event_socket_connect(evb, sockaddr, socklen) < 0) {
         isshe_log_alert_errno(log, errno, "connect to xxx failed");
         return ISSHE_FAILURE;
     }
-
-    conn->sockaddr = sockaddr;
-    conn->socklen = socklen;
-    // conn->fd = fd            // TODO 需要再补充，从evb中获取
 
     return ISSHE_SUCCESS;
 }
@@ -433,7 +392,7 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
     isocks_config_t     *config;
     isshe_mempool_t     *mempool = NULL;
     isocks_session_t    *session = NULL;
-    isshe_connection_t  *out_conn = NULL;
+    isshe_connection_t  *select_conn = NULL;
 
     config = (isocks_config_t *)data;
     //isshe_debug_print_addr(sockaddr, config->log);  // DEBUG
@@ -490,16 +449,19 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
         session->inbev, session->outbev);
 
     // 选择下一跳信息
-    out_conn = isocks_event_select_next(config->outarray, config->nout);
-    if (!out_conn) {
+    select_conn = isocks_event_select_next(config->outarray, config->nout);
+    if (!select_conn) {
         isshe_log_alert(config->log, "select next failed");
         goto isocks_event_accept_error;
     }
 
+    // TODO 分配outconn->addr，如果后续需要用到，就在这里分配
+    // session->outconn->addr = isshe_address_create();
+
     // 连接下一跳（出口）。NOTE：共用了sockaddr。
-    if (isocks_event_connect_to_next(session->outbev,
-    session->outconn, out_conn->sockaddr,
-    out_conn->socklen, config->log) == ISSHE_FAILURE) {
+    if (isocks_event_connect_to_next(
+    session->outbev, select_conn->addr->sockaddr,
+    select_conn->addr->socklen, config->log) == ISSHE_FAILURE) {
         isshe_log_alert(config->log, "connect to next failed");
         goto isocks_event_accept_error;
     }

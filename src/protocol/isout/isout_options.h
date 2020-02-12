@@ -26,13 +26,20 @@ struct isout_protocol_options_s
 {
     //isshe_uint64_t      count;          // 计数器，初始化为0
     isshe_uint32_t      random;         // 随机数, 初始化为0
+    //isshe_addr_info_t   *remote;
+    /*
     isshe_char_t        *dname;         // domain name
     isshe_char_t        *ipv6;          // 初始化为NULL
     isshe_uint32_t      ipv4;           // 初始化为0
+    */
+    isshe_char_t        *addr;          // 地址
+    isshe_uint8_t       addr_len;       // 地址长度
     isshe_uint16_t      port;           // 初始化为0
     isshe_uint8_t       addr_type;      // 初始化为0， ISSHE_SOCKS_ADDR_TYPE_DOMAIN
+    /*
     isshe_uint8_t       dname_len;      // 初始化为0
     isshe_uint8_t       ipv6_len;       // 初始化为0
+    */
     isshe_uint8_t       session_crypto_algo;
     isshe_char_t        *session_crypto_key;
     isshe_char_t        *session_crypto_iv;    
@@ -82,7 +89,7 @@ void isout_protocol_options_print(
 isshe_int_t isout_protocol_send_opts_generate(
     isout_protocol_options_t *send, 
     isout_protocol_options_t *all,
-    isshe_addr_info_t *socks5,
+    isshe_address_t *socks5,
     isshe_mempool_t *mempool,
     isshe_log_t *log);
 

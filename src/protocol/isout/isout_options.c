@@ -49,7 +49,6 @@ void isout_protocol_header_destroy(
 }
 
 
-
 isshe_int_t
 isout_protocol_options_from_string(
     isout_protocol_options_t *options,
@@ -80,23 +79,12 @@ isout_protocol_options_from_string(
         case ISOUT_OPTION_RANDOM:
             options->random = ntohl(*(uint32_t *)opt->data);
             break;
-        case ISOUT_OPTION_DOMAIN:
-            if (!options->dname) {
-                options->dname_len = opt->len;
-                options->dname = isshe_strdup_mp(
+        case ISOUT_OPTION_ADDR:
+            if (!options->addr) {
+                options->addr = isshe_strdup_mp(
                     (isshe_char_t *)opt->data, opt->len, mempool);
+                options->addr_len = opt->len;
             }
-            break;
-        case ISOUT_OPTION_IPV6:
-            if (!options->ipv6) {
-                options->ipv6_len = opt->len;
-                options->ipv6 = isshe_strdup_mp(
-                    (isshe_char_t *)opt->data, opt->len, mempool);
-            }
-            break;
-        case ISOUT_OPTION_IPV4:
-            options->ipv4 = ntohl(*(uint32_t *)opt->data);      // 大端转主机
-            break;
         case ISOUT_OPTION_PORT:
             options->port = ntohs(*(uint16_t *)opt->data);
             break;
@@ -147,18 +135,8 @@ isshe_int_t isout_protocol_options_len(isout_protocol_options_t *opts)
             + sizeof(opt.type) + sizeof(opt.len);
     }
 
-    if (opts->dname && opts->dname_len != 0) {
-        len += opts->dname_len
-            + sizeof(opt.type) + sizeof(opt.len);
-    }
-
-    if (opts->ipv6 && opts->ipv6_len != 0) {
-        len += opts->ipv6_len
-            + sizeof(opt.type) + sizeof(opt.len);
-    }
-
-    if (opts->ipv4 != 0) {
-        len += sizeof(opts->ipv4)
+    if (opts->addr && opts->addr_len != 0) {
+        len += opts->addr_len
             + sizeof(opt.type) + sizeof(opt.len);
     }
 
@@ -217,7 +195,6 @@ isout_protocol_options_to_string(
     // 计算所有OPTION长度
     isshe_int_t                 len;
     isshe_char_t                *tmp;
-    //isout_protocol_option_t     opt;
     isshe_uint16_t              ui16;
     isshe_uint32_t              ui32;
 
@@ -234,20 +211,9 @@ isout_protocol_options_to_string(
             ISOUT_OPTION_RANDOM, sizeof(opts->random), &ui32);
     }
 
-    if (opts->dname && opts->dname_len != 0) {
+    if (opts->addr && opts->addr_len != 0) {
         tmp += isout_option_append(tmp,
-            ISOUT_OPTION_DOMAIN, opts->dname_len, opts->dname);
-    }
-
-    if (opts->ipv6 && opts->ipv6_len != 0) {
-        tmp += isout_option_append(tmp,
-            ISOUT_OPTION_IPV6, opts->ipv6_len, opts->ipv6);
-    }
-
-    if (opts->ipv4 != 0) {
-        ui32 = htonl(opts->ipv4);
-        tmp += isout_option_append(tmp,
-            ISOUT_OPTION_IPV4, sizeof(opts->ipv4), &ui32);
+            ISOUT_OPTION_ADDR, opts->addr_len, opts->addr);
     }
 
     if (opts->port != 0) {
@@ -313,17 +279,19 @@ isout_protocol_options_print(isout_protocol_options_t *opts, isshe_log_t *log)
     if (opts->random != 0) {
         isshe_log_info(log, " - random: %lld", opts->random);
     }
-
-    if (opts->dname && opts->dname_len != 0) {
-        isshe_log_info(log, " - dname: (%d)%s", opts->dname_len, opts->dname);
-    }
-
-    if (opts->ipv6 && opts->ipv6_len != 0) {
-        isshe_log_info(log, " - ipv6: (%d)%s", opts->ipv6_len, opts->ipv6);
-    }
-
-    if (opts->ipv4 != 0) {
-        isshe_log_info(log, " - ipv4: %u", opts->ipv4);
+    if (opts->addr && opts->addr_len != 0) {
+        switch (opts->addr_type)
+        {
+        case ISSHE_ADDR_TYPE_DOMAIN:
+            isshe_log_info(log, " - dname: (%d)%s", opts->addr_len, opts->addr);
+            break;
+        case ISSHE_ADDR_TYPE_IPV6:
+            isshe_log_info(log, " - ipv6: (%d)%s", opts->addr_len, opts->addr);
+            break;
+        case ISSHE_ADDR_TYPE_IPV4:
+            isshe_log_info(log, " - ipv4: (%d)%s", opts->addr_len, opts->addr);
+            break;
+        }
     }
 
     if (opts->port != 0) {
@@ -382,7 +350,7 @@ isshe_int_t
 isout_protocol_send_opts_generate(
     isout_protocol_options_t *send, 
     isout_protocol_options_t *all,
-    isshe_addr_info_t *addrinfo,
+    isshe_address_t *addrinfo,
     isshe_mempool_t *mempool,
     isshe_log_t *log)
 {
@@ -410,14 +378,16 @@ isout_protocol_send_opts_generate(
         send->session_crypto_iv = all->session_crypto_iv;
     }
 
-    if (!all->dname && addrinfo->addr_text) {
-        all->dname = addrinfo->addr_text;
-        all->dname_len = addrinfo->addr_len;
+    if (!all->addr && addrinfo->addr) {
+        all->addr = addrinfo->addr;
+        all->addr_len = addrinfo->addr_len;
         all->port = addrinfo->port;
+        all->addr_type = addrinfo->addr_type;
 
-        send->dname = all->dname;
-        send->dname_len = all->dname_len;
+        send->addr = all->addr;
+        send->addr_len = all->addr_len;
         send->port = all->port;
+        send->addr_type = all->addr_type;
     }
 
     return ISSHE_SUCCESS;

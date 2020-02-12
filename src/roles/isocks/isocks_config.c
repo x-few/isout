@@ -63,16 +63,16 @@ isocks_config_print(isocks_config_t *config, isshe_log_t *log)
     for (i = 0; i < config->nin; i++) {
         isshe_log_info(log,
             "- in addr              : %s:%d:%s",
-            config->inarray[i].addr_text,
-            config->inarray[i].port,
+            config->inarray[i].addr->addr,
+            config->inarray[i].addr->port,
             config->inarray[i].protocol_text);
     }
 
     for (i = 0; i < config->nout; i++) {
         isshe_log_info(log,
             "- out addr             : %s:%d:%s",
-            config->outarray[i].addr_text,
-            config->outarray[i].port,
+            config->outarray[i].addr->addr,
+            config->outarray[i].addr->port,
             config->outarray[i].protocol_text);
     }
     isshe_log_info(log,
