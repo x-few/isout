@@ -164,6 +164,7 @@ isocks_socks4_connect_cmd_process(
     addr->port = ntohs(request->dport);
 
     isshe_memzero(&reply, sizeof(reply));
+    reply.cmd = SOCKS4_REQUEST_GRANTED;
     ievent_buffer_event_write(bev, &reply, sizeof(reply));
 
     return ISSHE_SUCCESS;
