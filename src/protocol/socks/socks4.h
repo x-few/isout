@@ -24,6 +24,7 @@ enum socks4_status_e {
     SOCKS4_STATUS_CONNECTED = 2,
 };
 
+#pragma pack(1)
 struct socks4_request_s
 {
     isshe_uint8_t   version;
@@ -32,6 +33,7 @@ struct socks4_request_s
     isshe_uint8_t   daddr[4];
     isshe_uint8_t   userid[1];      // 不支持userid，1字节为了存userid结束符NULL。
 };
+#pragma pack()
 
 struct socks4_reply_s
 {
