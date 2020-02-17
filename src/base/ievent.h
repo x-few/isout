@@ -109,4 +109,10 @@ ievent_buffer_event_free(ievent_buffer_event_t *bev);
 isshe_int_t
 ievent_buffer_add_buffer(ievent_buffer_t *dst, ievent_buffer_t *src);
 
+isshe_int_t
+ievent_buffer_copyout(
+    ievent_buffer_t *buf,
+    void *data_out,
+    size_t data_len);
+
 #endif

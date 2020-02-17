@@ -5,6 +5,7 @@ AM_CPPFLAGS = -g -O2 \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/base \
 	-I$(top_srcdir)/src/protocol/isout \
+	-I$(top_srcdir)/src/protocol/socks \
 	-I$(top_srcdir)/src/roles/imaster \
 	-I$(top_srcdir)/src/roles/isocks \
 	-I$(top_srcdir)/src/roles/iproxy
@@ -25,11 +26,13 @@ isout_out_SOURCES = \
 	protocol/isout/isout_protocol.c \
 	protocol/isout/isout_encode.c \
 	protocol/isout/isout_decode.c \
+	protocol/socks/socks5.c \
+	protocol/socks/socks4.c \
 	roles/imaster/imaster_process.c \
 	roles/imaster/imaster_signal.c \
 	roles/imaster/imaster.c \
 	roles/isocks/isocks_config.c \
-	roles/isocks/isocks_socks5.c \
+	roles/isocks/isocks_socks.c \
 	roles/isocks/isocks_event.c \
 	roles/isocks/isocks_session.c \
 	roles/isocks/isocks.c \

@@ -222,3 +222,10 @@ ievent_buffer_add_buffer(ievent_buffer_t *dst, ievent_buffer_t *src)
 {
     return evbuffer_add_buffer(dst, src);
 }
+
+isshe_int_t
+ievent_buffer_copyout(
+    ievent_buffer_t *buf, void *data_out, size_t data_len)
+{
+    return evbuffer_copyout(buf, data_out, data_len);
+}

@@ -6,9 +6,11 @@
 #include "isout_options.h"
 #include "isout_encode.h"
 #include "isout_decode.h"
+#include "socks5.h"
+#include "socks4.h"
 
 #include "isocks_config.h"
-#include "isocks_socks5.h"
+#include "isocks_socks.h"
 #include "isocks_session.h"
 #include "isocks_event.h"
 

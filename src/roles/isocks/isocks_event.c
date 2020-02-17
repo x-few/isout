@@ -217,12 +217,82 @@ isocks_event_out_transfer_data(isocks_session_t *session)
     return ISSHE_SUCCESS;
 }
 
-void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
+
+isshe_int_t
+isocks_socks_handshake(
+    ievent_buffer_event_t *bev,
+    isshe_connection_t *conn,
+    isshe_address_t *addr,
+    isshe_log_t *log)
+{
+    isshe_int_t         ret;
+    isshe_uint8_t       version;
+    isshe_int_t         len;
+    ievent_buffer_t     *buffer;
+
+    buffer = ievent_buffer_event_get_input(bev);
+    len = ievent_buffer_get_length(buffer);
+    if (len <= 0) {
+        return ISSHE_SUCCESS;
+    }
+
+    ievent_buffer_copyout(buffer, &version, sizeof(version));
+    conn->protocol = version;
+    isshe_log_debug(log, "isocks_socks_handshake: version = %d", version);
+
+    switch (version)
+    {
+    case SOCKS_PROTOCOL_V5:
+        if (conn->status == SOCKS5_STATUS_UNKNOWN || 
+        conn->status == SOCKS5_STATUS_WAITING_SELECTION) {
+            conn->status = SOCKS5_STATUS_WAITING_SELECTION;
+            ret = isocks_socks5_selction_message_process(bev, log);
+            if (ret == ISSHE_FAILURE) {
+                isshe_log_error(log,
+                    "socks5_selction_message_process failed!!!");
+                return ISSHE_FAILURE;
+            } else if (ret == ISSHE_RETRY) {
+                return ISSHE_RETRY;
+            } else {
+                conn->status = SOCKS5_STATUS_WAITING_REQUEST;
+            }
+        } else if (conn->status == SOCKS5_STATUS_WAITING_REQUEST) {
+            ret = isocks_socks5_request_process(bev, conn, log, addr);
+            if (ret == ISSHE_FAILURE) {
+                isshe_log_error(log, "socks5_request_process failed!!!");
+                return ISSHE_FAILURE;
+            } else if (ret == ISSHE_RETRY) {
+                return ISSHE_RETRY;
+            } else {
+                conn->status = SOCKS5_STATUS_CONNECTED;
+            }
+        }
+        break;
+    case SOCKS_PROTOCOL_V4:
+        ret = isocks_socks4_request_process(bev, conn, log, addr);
+        if (ret == ISSHE_FAILURE) {
+            isshe_log_error(log, "socks4_request_process failed!!!");
+            return ISSHE_FAILURE;
+        } else if (ret == ISSHE_RETRY) {
+            return ISSHE_RETRY;
+        } else {
+            conn->status = SOCKS4_STATUS_CONNECTED;
+        }
+        break;
+    default:
+        break;
+    }
+
+    return ISSHE_SUCCESS;
+}
+
+void
+isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
     isocks_session_t    *session = (isocks_session_t *)ctx;
     isshe_connection_t  *inconn;
     isshe_log_t         *log;
-    isshe_int_t         ret;
+    isshe_int_t         ret = ISSHE_SUCCESS;
 
     log = session->config->log;
 
@@ -232,45 +302,19 @@ void isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
         return;
     }
 
-    switch (inconn->status)
-    {
-    case SOCKS5_STATUS_CONNECTED:
-        //isshe_address_print(&session->inaddr, log);
-        if (isocks_event_in_transfer_data(session) == ISSHE_FAILURE) {
-            isocks_session_free(session,
-                ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
-        }
-        break;
-    case SOCKS5_STATUS_WAITING_SELECTION:
-        ret = socks5_selction_message_process(bev, log);
-        if (ret == ISSHE_FAILURE) {
-            isshe_log_error(log, "socks5_selction_message_process failed!!!");
-            isocks_session_free(session,
-                ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
-            return;
-        } else if (ret == ISSHE_RETRY) {
-            return ;
-        } else {
-            inconn->status = SOCKS5_STATUS_WAITING_REQUEST;
-        }
+    // TODO
+    // 如果可以进入数据转发阶段，就状态都设置为CONNECTED
+    if (inconn->status == SOCKS5_STATUS_CONNECTED
+    || inconn->status == SOCKS4_STATUS_CONNECTED) {
+        ret = isocks_event_in_transfer_data(session);
+    } else {
+        ret = isocks_socks_handshake(
+            bev, session->inconn, &session->inaddr, log);
+    }
 
-        break;
-    case SOCKS5_STATUS_WAITING_REQUEST:
-        ret = socks5_request_process(
-            bev, session->inconn, log, &session->inaddr);
-        if (ret == ISSHE_FAILURE) {
-            isshe_log_error(log, "socks5_request_process failed!!!");
-            isocks_session_free(session,
-                ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
-            return;
-        } else if (ret == ISSHE_RETRY) {
-            return;
-        } else {
-            inconn->status = SOCKS5_STATUS_CONNECTED;
-        }
-        break;
-    default:
-        break;
+    if (ret == ISSHE_FAILURE) {
+        isocks_session_free(session,
+            ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
     }
 }
 
@@ -472,7 +516,7 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
     session->config = config;
     session->inconn->fd = fd;
     session->inconn->data = (void *)session;
-    session->inconn->status = SOCKS5_STATUS_WAITING_SELECTION;
+    session->inconn->status = SOCKS5_STATUS_UNKNOWN;
     session->inconn->mempool = mempool;
     session->outconn->fd = ievent_buffer_event_getfd(session->outbev);
     session->outconn->mempool = mempool;
