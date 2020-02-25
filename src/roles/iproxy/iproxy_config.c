@@ -10,13 +10,13 @@ iproxy_config_parse(iproxy_config_t *config,
     isshe_json_t *tmp;
 
     if (!json) {
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     iproxy_json = isshe_json_get_object(json, IPROXY_CONFIG_KEY);
     if (!iproxy_json) {
         isshe_log_alert(log, "iproxy: cannot found iproxy config");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     // 解析日志级别、日志文件路径
@@ -27,7 +27,7 @@ iproxy_config_parse(iproxy_config_t *config,
     config->inarray = iconfig_connection_parse(config->mempool, tmp, &config->nin);
     if (!config->inarray) {
         isshe_log_alert(log, "iproxy: invalid inbound config");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     tmp = isshe_json_get_object(iproxy_json, "connpool");
@@ -36,7 +36,7 @@ iproxy_config_parse(iproxy_config_t *config,
         config->connpool_size = tmp->vint;
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 void

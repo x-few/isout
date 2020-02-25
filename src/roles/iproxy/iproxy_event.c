@@ -12,10 +12,10 @@ iproxy_event_connect_to_next(
 {
     if (ievent_buffer_event_socket_connect(bev, sockaddr, socklen) < 0) {
         isshe_log_alert_errno(log, errno, "connect to xxx failed");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 
@@ -28,7 +28,7 @@ iproxy_connect_to_out(iproxy_session_t *session,
 
     if (!session || !outconn) {
         isshe_log_error(log, "to out failed: invalid parameters");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     // 连接下一跳
@@ -38,12 +38,12 @@ iproxy_connect_to_out(iproxy_session_t *session,
             opts->addr_len, opts->addr_type, session->mempool, log);
         if (!outconn->addr) {
             isshe_log_error(log, "isshe_address_create failed");
-            return ISSHE_FAILURE;
+            return ISSHE_ERROR;
         }
         if (!isshe_address_sockaddr_create(
             outconn->addr, session->mempool, log)) {
             isshe_log_error(log, "isshe_address_sockaddr_create failed");
-            return ISSHE_FAILURE;
+            return ISSHE_ERROR;
         }
 
         isshe_address_port_set(outconn->addr, opts->port);
@@ -53,13 +53,13 @@ iproxy_connect_to_out(iproxy_session_t *session,
         // 连接下一跳（需要的话）
         if (iproxy_event_connect_to_next(
         session->outbev, outconn->addr->sockaddr,
-        outconn->addr->socklen, log) == ISSHE_FAILURE) {
+        outconn->addr->socklen, log) == ISSHE_ERROR) {
             isshe_log_alert(log, "connect to xx(TODO) failed");
-            return ISSHE_FAILURE;
+            return ISSHE_ERROR;
         }
     }
     
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 isshe_int_t
@@ -88,7 +88,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
     header_len = sizeof(isout_protocol_header_t);
     buffer = ievent_buffer_event_get_input(src_bev);
     if (!buffer) {
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     while(ievent_buffer_get_length(buffer) > 0) {
@@ -100,19 +100,19 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
             bev_len = ievent_buffer_get_length(buffer);
             if (bev_len == 0 || bev_len < header_len) {
                 // 等待更多数据
-                return ISSHE_SUCCESS;
+                return ISSHE_OK;
             }
 
             read_len = ievent_buffer_event_read(
                 src_bev, phdr, header_len);
-            if (read_len == ISSHE_FAILURE || read_len != header_len) {
-                return ISSHE_FAILURE;
+            if (read_len == ISSHE_ERROR || read_len != header_len) {
+                return ISSHE_ERROR;
             }
 
             if (!isout_protocol_header_is_valid(phdr)) {
                 //isout_protocol_header_print(phdr, log);
                 isshe_log_error(log, "invalid isout protocol header");
-                return ISSHE_FAILURE;
+                return ISSHE_ERROR;
             }
 
             // 解密头部
@@ -129,20 +129,20 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
             bev_len = ievent_buffer_get_length(buffer);
             if (bev_len == 0 || bev_len < header.opts_len) {
                 // 等待更多数据
-                return ISSHE_SUCCESS;
+                return ISSHE_OK;
             }
 
             read_len = ievent_buffer_event_read(
                 src_bev, stropts, header.opts_len);
-            if (read_len == ISSHE_FAILURE || read_len != header.opts_len) {
-                return ISSHE_FAILURE;
+            if (read_len == ISSHE_ERROR || read_len != header.opts_len) {
+                return ISSHE_ERROR;
             }
 
             // 解析选项
             if (isout_protocol_options_from_string(opts,
-            stropts, header.opts_len, session->mempool, log) == ISSHE_FAILURE) {
+            stropts, header.opts_len, session->mempool, log) == ISSHE_ERROR) {
                 isshe_log_error(log, "isout options parse failed");
-                return ISSHE_FAILURE;
+                return ISSHE_ERROR;
             }
 
             isout_protocol_options_print(opts, log);
@@ -156,9 +156,9 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
 
         // 连接下一跳
         if (iproxy_connect_to_out(
-        session, session->outconn, log) == ISSHE_FAILURE) {
+        session, session->outconn, log) == ISSHE_ERROR) {
             isshe_log_warning(log, "connect to out failed!!!");
-            return ISSHE_FAILURE;
+            return ISSHE_ERROR;
         }
 
         // 读数据
@@ -166,12 +166,12 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
             bev_len = ievent_buffer_get_length(buffer);
             if (bev_len == 0 || bev_len < header.data_len) {
                 // 等待更多数据
-                return ISSHE_SUCCESS;
+                return ISSHE_OK;
             }
 
             read_len = ievent_buffer_event_read(src_bev, data, header.data_len);
-            if (read_len == ISSHE_FAILURE || read_len != header.data_len) {
-                return ISSHE_FAILURE;
+            if (read_len == ISSHE_ERROR || read_len != header.data_len) {
+                return ISSHE_ERROR;
             }
 
             // 解密
@@ -191,7 +191,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
     }
 
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 
@@ -199,7 +199,7 @@ void iproxy_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
     iproxy_session_t    *session = (iproxy_session_t *)ctx;
 
-    if (iproxy_event_in_transfer_data(session) == ISSHE_FAILURE) {
+    if (iproxy_event_in_transfer_data(session) == ISSHE_ERROR) {
         // 释放连接、释放资源
         iproxy_session_free(session,
             IPROXY_SESSION_FREE_IN | IPROXY_SESSION_FREE_OUT);
@@ -225,7 +225,7 @@ iproxy_event_out_transfer_data(iproxy_session_t *session)
     dst_bev = session->inbev;
     buffer = ievent_buffer_event_get_input(src_bev);
     if (!buffer) {
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     while(ievent_buffer_get_length(buffer) > 0) {
@@ -233,24 +233,24 @@ iproxy_event_out_transfer_data(iproxy_session_t *session)
         data_len = ievent_buffer_get_length(buffer);
         /*
         if (data_len <= 0) {
-            return ISSHE_SUCCESS;
+            return ISSHE_OK;
         }
         */
 
         // 读取数据
         data_len = ievent_buffer_event_read(src_bev, data, data_len);
-        if (data_len == ISSHE_FAILURE) {
+        if (data_len == ISSHE_ERROR) {
             isshe_log_error(log, "read data length: %d", data_len);
-            return ISSHE_FAILURE;
+            return ISSHE_ERROR;
         }
 
         // 设置协议选项
         isshe_memzero(&opts, sizeof(isout_protocol_options_t));
         opts.data_len = data_len;
         if (isout_protocol_options_to_string(
-        &opts, stropts, &opts_len, log) == ISSHE_FAILURE) {
+        &opts, stropts, &opts_len, log) == ISSHE_ERROR) {
             isshe_log_error(log, "isout protocol options to string failed");
-            return ISSHE_FAILURE;
+            return ISSHE_ERROR;
         }
 
         // 设置协议头部
@@ -278,7 +278,7 @@ iproxy_event_out_transfer_data(iproxy_session_t *session)
         ievent_buffer_event_write(dst_bev, data, data_len);
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 
@@ -286,7 +286,7 @@ static void iproxy_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
     iproxy_session_t *session = (iproxy_session_t *)ctx;
 
-    if (iproxy_event_out_transfer_data(session) == ISSHE_FAILURE) {
+    if (iproxy_event_out_transfer_data(session) == ISSHE_ERROR) {
         // 释放资源、释放连接
         iproxy_session_free(session,
             IPROXY_SESSION_FREE_IN | IPROXY_SESSION_FREE_OUT);

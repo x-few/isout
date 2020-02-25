@@ -11,7 +11,7 @@ isshe_int_t isout_decode_aes_cfb128(isshe_uchar_t *ckey, isshe_uchar_t *ivec,
 
     if (!ckey || !ivec || !data) {
         isshe_log_error(log, "isout_decode_aes_cfb128: invalid parameters");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     // copy ivec, because isshe_aes_cfb128_encrypt will change ivec
@@ -29,7 +29,7 @@ isshe_int_t isout_decode_aes_cfb128(isshe_uchar_t *ckey, isshe_uchar_t *ivec,
     //isshe_log_debug(log, 
     //"after decode: ivec = %s, data = (%d)%s", ivec_cp, data_len, data);
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 isshe_int_t
@@ -43,6 +43,6 @@ isout_decode(isshe_int_t algo, isshe_char_t *key, isshe_char_t *iv,
             (unsigned char *)iv, data, data_len, log);
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 

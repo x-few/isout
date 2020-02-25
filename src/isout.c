@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     // 配置log
     config->log = isshe_log_instance_get(config->log_level, config->log_file);
 
-    if (isshe_process_title_init(argc, argv) == ISSHE_FAILURE) {
+    if (isshe_process_title_init(argc, argv) == ISSHE_ERROR) {
         isshe_log_alert(config->log, "isshe_process_title_init failed");
         exit(0);
     }

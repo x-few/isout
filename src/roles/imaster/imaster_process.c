@@ -53,7 +53,7 @@ isshe_int_t
 imaster_channel_create()
 {
     // 新建/设置通讯通道
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 
@@ -129,7 +129,7 @@ imaster_roles_process_start(iconfig_t *config)
     || !isshe_json_is_array(jsroles_array)
     || array_len <= 0) {
         isshe_log_alert(config->log, "config error: no 'enable_roles' field");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     int i;
@@ -164,7 +164,7 @@ imaster_roles_process_start(iconfig_t *config)
         }
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 
@@ -332,7 +332,7 @@ isshe_int_t imaster_roles_process_notify(isshe_int_t signo)
         }
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 isshe_bool_t imaster_roles_process_all_existed()

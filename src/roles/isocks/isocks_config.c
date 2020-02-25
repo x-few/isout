@@ -9,13 +9,13 @@ isocks_config_parse(isocks_config_t *config, isshe_json_t *json, isshe_log_t *lo
     isshe_json_t *tmp;
 
     if (!json) {
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     isocks_json = isshe_json_get_object(json, ISOCKS_CONFIG_KEY);
     if (!isocks_json) {
         isshe_log_alert(log, "isocks: cannot found isocks config");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     // 解析日志级别、日志文件路径
@@ -26,14 +26,14 @@ isocks_config_parse(isocks_config_t *config, isshe_json_t *json, isshe_log_t *lo
     config->inarray = iconfig_connection_parse(config->mempool, tmp, &config->nin);
     if (!config->inarray) {
         isshe_log_alert(log, "isocks: invalid inbound config");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     tmp = isshe_json_get_object(isocks_json, "out");
     config->outarray = iconfig_connection_parse(config->mempool, tmp, &config->nout);
     if (!config->outarray) {
         isshe_log_alert(log, "isocks: invalid outbound config");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     tmp = isshe_json_get_object(isocks_json, "connpool");
@@ -42,7 +42,7 @@ isocks_config_parse(isocks_config_t *config, isshe_json_t *json, isshe_log_t *lo
         config->connpool_size = tmp->vint;
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 void

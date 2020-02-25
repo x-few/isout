@@ -20,14 +20,14 @@ isocks_event_in_transfer_data(isocks_session_t *session)
     dst_bev = session->outbev;
     buffer = ievent_buffer_event_get_input(src_bev);
     if (!buffer) {
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     while(ievent_buffer_get_length(buffer) > 0) {
         // 获取数据长度
         data_len = ievent_buffer_get_length(buffer);
         //if (data_len <= 0) {
-        //    return ISSHE_SUCCESS;
+        //    return ISSHE_OK;
         //}
 
         // 生成选项
@@ -35,13 +35,13 @@ isocks_event_in_transfer_data(isocks_session_t *session)
         isshe_memzero(&opts, sizeof(isout_protocol_options_t));
         if (isout_protocol_send_opts_generate(&opts,
         session->outopts, (isshe_address_t *)(&session->inaddr),
-        session->mempool, log) == ISSHE_FAILURE) {
+        session->mempool, log) == ISSHE_ERROR) {
             goto isocks_event_in_td_error;
         }
 
         // 读取数据
         data_len = ievent_buffer_event_read(session->inbev, data, data_len);
-        if (data_len == ISSHE_FAILURE) {
+        if (data_len == ISSHE_ERROR) {
             isshe_log_error(log, "read data length: %d", data_len);
             goto isocks_event_in_td_error;
         }
@@ -49,7 +49,7 @@ isocks_event_in_transfer_data(isocks_session_t *session)
         // 设置协议选项
         opts.data_len = data_len;       // TODO
         if (isout_protocol_options_to_string(
-        &opts, stropts, &opts_len, log) == ISSHE_FAILURE) {
+        &opts, stropts, &opts_len, log) == ISSHE_ERROR) {
             isshe_log_error(log, "isout protocol options to string failed");
             goto isocks_event_in_td_error;
         }
@@ -82,13 +82,13 @@ isocks_event_in_transfer_data(isocks_session_t *session)
     }
 
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 
 isocks_event_in_td_error:
     isout_protocol_send_opts_resume(
         &opts, session->outopts, session->mempool, log);
 
-    return ISSHE_FAILURE;
+    return ISSHE_ERROR;
 }
 
 
@@ -118,7 +118,7 @@ isocks_event_out_transfer_data(isocks_session_t *session)
     header_len = sizeof(isout_protocol_header_t);
     buffer = ievent_buffer_event_get_input(src_bev);
     if (!buffer) {
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     while(ievent_buffer_get_length(buffer) > 0) {
@@ -130,18 +130,18 @@ isocks_event_out_transfer_data(isocks_session_t *session)
             bev_len = ievent_buffer_get_length(buffer);
             if (bev_len == 0 || bev_len < header_len) {
                 // 等待更多数据
-                return ISSHE_SUCCESS;
+                return ISSHE_OK;
             }
 
             read_len = ievent_buffer_event_read(
                 src_bev, phdr, header_len);
-            if (read_len == ISSHE_FAILURE || read_len != header_len) {
-                return ISSHE_FAILURE;
+            if (read_len == ISSHE_ERROR || read_len != header_len) {
+                return ISSHE_ERROR;
             }
 
             if (!isout_protocol_header_is_valid(phdr)) {
                 isshe_log_error(log, "invalid isout protocol header");
-                return ISSHE_FAILURE;
+                return ISSHE_ERROR;
             }
 
             // 解密头部
@@ -158,20 +158,20 @@ isocks_event_out_transfer_data(isocks_session_t *session)
             bev_len = ievent_buffer_get_length(buffer);
             if (bev_len == 0 || bev_len < header.opts_len) {
                 // 等待更多数据
-                return ISSHE_SUCCESS;
+                return ISSHE_OK;
             }
 
             read_len = ievent_buffer_event_read(
                 src_bev, stropts, header.opts_len);
-            if (read_len == ISSHE_FAILURE || read_len != header.opts_len) {
-                return ISSHE_FAILURE;
+            if (read_len == ISSHE_ERROR || read_len != header.opts_len) {
+                return ISSHE_ERROR;
             }
 
             // 解析选项
             if (isout_protocol_options_from_string(opts,
-            stropts, header.opts_len, session->mempool, log) == ISSHE_FAILURE) {
+            stropts, header.opts_len, session->mempool, log) == ISSHE_ERROR) {
                 isshe_log_error(log, "isout options parse failed");
-                return ISSHE_FAILURE;
+                return ISSHE_ERROR;
             }
 
             //isout_protocol_options_print(opts, log);
@@ -188,12 +188,12 @@ isocks_event_out_transfer_data(isocks_session_t *session)
             bev_len = ievent_buffer_get_length(buffer);
             if (bev_len == 0 || bev_len < header.data_len) {
                 // 等待更多数据
-                return ISSHE_SUCCESS;
+                return ISSHE_OK;
             }
 
             read_len = ievent_buffer_event_read(src_bev, data, header.data_len);
-            if (read_len == ISSHE_FAILURE || read_len != header.data_len) {
-                return ISSHE_FAILURE;
+            if (read_len == ISSHE_ERROR || read_len != header.data_len) {
+                return ISSHE_ERROR;
             }
 
             // 解密
@@ -214,7 +214,7 @@ isocks_event_out_transfer_data(isocks_session_t *session)
     }
 
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 
@@ -233,7 +233,7 @@ isocks_socks_handshake(
     buffer = ievent_buffer_event_get_input(bev);
     len = ievent_buffer_get_length(buffer);
     if (len <= 0) {
-        return ISSHE_SUCCESS;
+        return ISSHE_OK;
     }
 
     ievent_buffer_copyout(buffer, &version, sizeof(version));
@@ -247,22 +247,22 @@ isocks_socks_handshake(
         conn->status == SOCKS5_STATUS_WAITING_SELECTION) {
             conn->status = SOCKS5_STATUS_WAITING_SELECTION;
             ret = isocks_socks5_selction_message_process(bev, log);
-            if (ret == ISSHE_FAILURE) {
+            if (ret == ISSHE_ERROR) {
                 isshe_log_error(log,
                     "socks5_selction_message_process failed!!!");
-                return ISSHE_FAILURE;
-            } else if (ret == ISSHE_RETRY) {
-                return ISSHE_RETRY;
+                return ISSHE_ERROR;
+            } else if (ret == ISSHE_AGAIN) {
+                return ISSHE_AGAIN;
             } else {
                 conn->status = SOCKS5_STATUS_WAITING_REQUEST;
             }
         } else if (conn->status == SOCKS5_STATUS_WAITING_REQUEST) {
             ret = isocks_socks5_request_process(bev, conn, log, addr);
-            if (ret == ISSHE_FAILURE) {
+            if (ret == ISSHE_ERROR) {
                 isshe_log_error(log, "socks5_request_process failed!!!");
-                return ISSHE_FAILURE;
-            } else if (ret == ISSHE_RETRY) {
-                return ISSHE_RETRY;
+                return ISSHE_ERROR;
+            } else if (ret == ISSHE_AGAIN) {
+                return ISSHE_AGAIN;
             } else {
                 conn->status = SOCKS5_STATUS_CONNECTED;
             }
@@ -270,11 +270,11 @@ isocks_socks_handshake(
         break;
     case SOCKS_PROTOCOL_V4:
         ret = isocks_socks4_request_process(bev, conn, log, addr);
-        if (ret == ISSHE_FAILURE) {
+        if (ret == ISSHE_ERROR) {
             isshe_log_error(log, "socks4_request_process failed!!!");
-            return ISSHE_FAILURE;
-        } else if (ret == ISSHE_RETRY) {
-            return ISSHE_RETRY;
+            return ISSHE_ERROR;
+        } else if (ret == ISSHE_AGAIN) {
+            return ISSHE_AGAIN;
         } else {
             conn->status = SOCKS4_STATUS_CONNECTED;
         }
@@ -283,7 +283,7 @@ isocks_socks_handshake(
         break;
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 void
@@ -292,7 +292,7 @@ isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
     isocks_session_t    *session = (isocks_session_t *)ctx;
     isshe_connection_t  *inconn;
     isshe_log_t         *log;
-    isshe_int_t         ret = ISSHE_SUCCESS;
+    isshe_int_t         ret = ISSHE_OK;
 
     log = session->config->log;
 
@@ -312,7 +312,7 @@ isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
             bev, session->inconn, &session->inaddr, log);
     }
 
-    if (ret == ISSHE_FAILURE) {
+    if (ret == ISSHE_ERROR) {
         isocks_session_free(session,
             ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
     }
@@ -323,7 +323,7 @@ void isocks_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
     isocks_session_t *session = (isocks_session_t *)ctx;
 
-    if (isocks_event_out_transfer_data(session) == ISSHE_FAILURE) {
+    if (isocks_event_out_transfer_data(session) == ISSHE_ERROR) {
         // 禁用读写、关闭、释放连接
         isocks_session_free(session,
             ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
@@ -412,10 +412,10 @@ isocks_event_connect_to_next(
 {
     if (ievent_buffer_event_socket_connect(evb, sockaddr, socklen) < 0) {
         isshe_log_alert_errno(log, errno, "connect to xxx failed");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 
@@ -505,7 +505,7 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
     // 连接下一跳（出口）。NOTE：共用了sockaddr。
     if (isocks_event_connect_to_next(
     session->outbev, select_conn->addr->sockaddr,
-    select_conn->addr->socklen, config->log) == ISSHE_FAILURE) {
+    select_conn->addr->socklen, config->log) == ISSHE_ERROR) {
         isshe_log_alert(config->log, "connect to next failed");
         goto isocks_event_accept_error;
     }

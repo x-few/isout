@@ -62,13 +62,13 @@ isout_protocol_options_from_string(
 
     if (!options || !stropts) {
         isshe_log_alert(log, "options from string: invalid parameters");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     // 检查是否是完整的选项
     if (!isout_protocol_options_is_valid(stropts, stropts_len)) {
         isshe_log_alert(log, "invalid isout protocol options");
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     index = 0;
@@ -120,7 +120,7 @@ isout_protocol_options_from_string(
         }
         index += sizeof(opt->type) + sizeof(opt->len) + opt->len;
     } while(opt->type != ISOUT_OPTION_END);
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 
@@ -201,7 +201,7 @@ isout_protocol_options_to_string(
     len = isout_protocol_options_len(opts);
     if (len == 0 || len > ISOUT_PROTOCOL_OPTIONS_LEN_MAX) {
         isshe_log_error(log, "isout protocol options length = %d", len);
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     tmp = stropts;
@@ -266,7 +266,7 @@ isout_protocol_options_to_string(
 
     *stropts_len = len;
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 
@@ -329,8 +329,8 @@ isout_protocol_options_string_len(isshe_char_t *buf, isshe_int_t buflen)
     isshe_int_t    len;
 
     len = isout_option_find_end(buf, buflen);
-    if (len == ISSHE_FAILURE) {
-        return ISSHE_FAILURE;
+    if (len == ISSHE_ERROR) {
+        return ISSHE_ERROR;
     }
 
     return (len + sizeof(opt.type) + sizeof(opt.len));
@@ -339,7 +339,7 @@ isout_protocol_options_string_len(isshe_char_t *buf, isshe_int_t buflen)
 isshe_bool_t
 isout_protocol_options_is_valid(isshe_char_t *buf, isshe_int_t buflen)
 {
-    if (isout_protocol_options_string_len(buf, buflen) == ISSHE_FAILURE) {
+    if (isout_protocol_options_string_len(buf, buflen) == ISSHE_ERROR) {
         return ISSHE_FALSE;
     }
 
@@ -362,7 +362,7 @@ isout_protocol_send_opts_generate(
         iv = isshe_mpalloc(mempool, ISSHE_AES_BLOCK_SIZE);
         if (!key || !iv) {
             isshe_log_error(log, "mpalloc key or iv failed");
-            return ISSHE_FAILURE;
+            return ISSHE_ERROR;
         }
 
         // 填充key/iv
@@ -390,7 +390,7 @@ isout_protocol_send_opts_generate(
         send->addr_type = all->addr_type;
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 void

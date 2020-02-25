@@ -27,7 +27,7 @@ void isocks_start(void *ctx)
     }
 
     isocks_config->mempool = mempool;
-    if (isocks_config_parse(isocks_config, all_config->config_json, log) == ISSHE_FAILURE) {
+    if (isocks_config_parse(isocks_config, all_config->config_json, log) == ISSHE_ERROR) {
         isshe_log_alert(log, "isocks: config parse failed");
         goto isocks_error;
     }
@@ -54,7 +54,7 @@ void isocks_start(void *ctx)
         isocks_config->mempool, isocks_config->log);
 
     // TODO 屏蔽信号（需要吗）
-    // TODO 设置进程标题
+    // 设置进程标题
     isshe_process_title_set("isout: isocks");
 
     isocks_config->event = ievent_create(
@@ -86,8 +86,8 @@ void isocks_start(void *ctx)
     }
 
     ievent_dispatch(isocks_config->event);
- 
- isocks_error:
+
+isocks_error:
     if (isocks_config->connpool) {
         isshe_connpool_destroy(isocks_config->connpool);
     }

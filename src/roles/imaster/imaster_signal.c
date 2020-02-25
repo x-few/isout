@@ -59,11 +59,11 @@ isshe_int_t imaster_signal_init(isshe_log_t *log)
         if (isshe_sigaction(sig->signo, sig->handler) == ISSHE_SIGNAL_ERROR) {
             isshe_log_alert(log, "signaction(%d:%s) failed", 
                 sig->signo, sig->signame);
-            return ISSHE_FAILURE;
+            return ISSHE_ERROR;
         }
     }
 
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 static isshe_int_t
@@ -81,7 +81,7 @@ do_imaster_signal_mask(isshe_log_t *log, sigset_t *set, isshe_int_t how)
     if (sigprocmask(how, set, NULL) == -1) {
         isshe_log_alert_errno(log, errno, "sigprocmask() failed");
     }
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 isshe_int_t imaster_signal_mask(isshe_log_t *log, sigset_t *set)

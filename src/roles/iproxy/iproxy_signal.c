@@ -16,12 +16,12 @@ isshe_int_t iproxy_signal_init(isshe_log_t *log)
         if (isshe_sigaction(sig->signo, sig->handler) == ISSHE_SIGNAL_ERROR) {
             isshe_log_alert(log, "signaction(%d:%s) failed", 
                 sig->signo, sig->signame);
-            return ISSHE_FAILURE;
+            return ISSHE_ERROR;
         }
     }
 
     ilog = log;
-    return ISSHE_SUCCESS;
+    return ISSHE_OK;
 }
 
 

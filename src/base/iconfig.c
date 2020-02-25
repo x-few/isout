@@ -41,7 +41,7 @@ iconfig_log_parse(isshe_json_t *json, isshe_int_t *level)
     tmp = isshe_json_get_object(log, "level");
     if (tmp && tmp->type == ISSHE_JSON_STRING) {
         *level = isshe_log_level_to_number(tmp->vstring);
-        if (*level == ISSHE_FAILURE) {
+        if (*level == ISSHE_ERROR) {
             *level = ISSHE_LOG_NOTICE;
         }
     }

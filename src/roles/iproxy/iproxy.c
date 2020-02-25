@@ -29,7 +29,7 @@ void iproxy_start(void *ctx)
     }
 
     iproxy_config->mempool = mempool;
-    if (iproxy_config_parse(iproxy_config, all_config->config_json, log) == ISSHE_FAILURE) {
+    if (iproxy_config_parse(iproxy_config, all_config->config_json, log) == ISSHE_ERROR) {
         isshe_log_alert(log, "iproxy: config parse failed");
         goto iproxy_error;
     }

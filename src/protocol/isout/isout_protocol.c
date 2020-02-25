@@ -59,7 +59,7 @@ isshe_size_t isout_option_append(isshe_char_t *buf,
 {
     isout_protocol_option_t *option;
     if (!buf) {
-        return ISSHE_FAILURE;
+        return ISSHE_ERROR;
     }
 
     option = (isout_protocol_option_t *)buf;
@@ -91,12 +91,12 @@ isshe_int_t isout_option_find(isshe_char_t *buf,
         if (option->type == type) {
             return i;
         } else if (option->type == ISOUT_OPTION_END) {
-            return ISSHE_FAILURE;
+            return ISSHE_ERROR;
         }
         i += option->len + sizeof(option->len) + sizeof(option->type);
     }
 
-    return ISSHE_FAILURE;
+    return ISSHE_ERROR;
 }
 
 
@@ -114,8 +114,8 @@ isout_option_insert(isshe_char_t *buf, isshe_size_t buflen,
     isshe_uint8_t type, isshe_uint8_t len, const void *data)
 {
     isshe_int_t end_pos = isout_option_find_end(buf, buflen);
-    if (end_pos == ISSHE_FAILURE) {
-        return ISSHE_FAILURE;
+    if (end_pos == ISSHE_ERROR) {
+        return ISSHE_ERROR;
     }
 
     end_pos += isout_option_append(buf + end_pos, type, len, data);
