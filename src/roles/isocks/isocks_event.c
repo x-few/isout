@@ -430,7 +430,7 @@ isocks_event_select_next(isshe_connection_t *array, isshe_int_t array_len)
 
 void
 isocks_event_accept_cb(ievent_conn_listener_t *listener, 
-    isshe_socket_t fd, struct sockaddr *sockaddr,
+    isshe_fd_t fd, isshe_sa_t *sockaddr,
     int socklen, void *data)
 {
     isocks_config_t     *config;

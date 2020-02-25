@@ -4,7 +4,7 @@
 #include "isocks.h"
 
 void isocks_event_accept_cb(ievent_conn_listener_t *listener, 
-    isshe_socket_t fd, struct sockaddr *sockaddr,
+    isshe_fd_t fd, isshe_sa_t *sockaddr,
     int socklen, void *data);
 
 #endif

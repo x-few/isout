@@ -48,7 +48,7 @@ iproxy_connect_to_out(iproxy_session_t *session,
 
         isshe_address_port_set(outconn->addr, opts->port);
 
-        isshe_debug_print_addr((struct sockaddr *)outconn->addr->sockaddr, log);
+        isshe_debug_print_addr((isshe_sa_t *)outconn->addr->sockaddr, log);
 
         // 连接下一跳（需要的话）
         if (iproxy_event_connect_to_next(
@@ -364,7 +364,7 @@ static void iproxy_event_out_event_cb(
 
 void
 iproxy_event_accept_cb(ievent_conn_listener_t *listener, 
-    isshe_socket_t fd, struct sockaddr *sockaddr,
+    isshe_fd_t fd, isshe_sa_t *sockaddr,
     int socklen, void *data)
 {
     iproxy_config_t     *config;

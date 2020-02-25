@@ -42,7 +42,7 @@ struct imaster_process_s {
     isshe_uint_t            respawn_count;
     imaster_process_flag_t  flag;
     // TODO
-    //isshe_socket_t channel[2];
+    //isshe_fd_t channel[2];
 
 };
 

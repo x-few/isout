@@ -7,6 +7,8 @@
 #include "event2/buffer.h"
 #include "event2/listener.h"
 
+#include "isshe_common.h"
+
 #define ievent_conn_listener_cb_t       evconnlistener_cb
 #define ievent_socket_t                 evutil_socket_t
 #define ievent_buffer_event_data_cb_t   bufferevent_data_cb
@@ -62,7 +64,7 @@ void ievent_listener_destroy(ievent_t *event, ievent_listener_t *listener);
 
 isshe_int_t ievent_dispatch(ievent_t *event);
 
-isshe_int_t ievent_connection_close(isshe_socket_t fd);
+isshe_int_t ievent_connection_close(isshe_fd_t fd);
 
 ievent_buffer_event_t *ievent_buffer_event_socket_create(
     ievent_t *event, ievent_socket_t fd);
@@ -100,7 +102,7 @@ ievent_buffer_event_read(ievent_buffer_event_t *bev, void *data, isshe_size_t si
 isshe_int_t
 ievent_buffer_event_write(ievent_buffer_event_t *bev, const void *data, size_t size);
 
-isshe_socket_t
+isshe_fd_t
 ievent_buffer_event_getfd(ievent_buffer_event_t *bev);
 
 void

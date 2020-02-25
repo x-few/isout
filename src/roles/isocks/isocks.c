@@ -70,7 +70,7 @@ void isocks_start(void *ctx)
             isocks_config->inarray[i].addr->addr,
             isocks_config->inarray[i].addr->port);
         isshe_debug_print_addr(
-            (struct sockaddr *)isocks_config->inarray[i].addr->sockaddr,
+            (isshe_sa_t *)isocks_config->inarray[i].addr->sockaddr,
             isocks_config->log);        // DEBUG!
 
         listener = ievent_listener_create(isocks_config->event,

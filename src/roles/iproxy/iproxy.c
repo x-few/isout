@@ -74,7 +74,7 @@ void iproxy_start(void *ctx)
             iproxy_config->inarray[i].addr->addr,
             iproxy_config->inarray[i].addr->port);
         isshe_debug_print_addr(
-            (struct sockaddr *)iproxy_config->inarray[i].addr->sockaddr,
+            (isshe_sa_t *)iproxy_config->inarray[i].addr->sockaddr,
             iproxy_config->log);        // DEBUG!
 
         listener = ievent_listener_create(iproxy_config->event,

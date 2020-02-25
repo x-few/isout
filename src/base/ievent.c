@@ -64,7 +64,7 @@ ievent_listener_create(ievent_t *event,
 
     listener->listener = evconnlistener_new_bind(event->base, cb, data,
         LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1, 
-        (struct sockaddr *)addr, socklen);
+        (isshe_sa_t *)addr, socklen);
 
     if (!listener->listener) {
         isshe_mpfree(event->mempool, listener, sizeof(ievent_listener_t));
@@ -119,7 +119,7 @@ ievent_dispatch(ievent_t *event)
 }
 
 isshe_int_t
-ievent_connection_close(isshe_socket_t fd)
+ievent_connection_close(isshe_fd_t fd)
 {
     // TODO accept之后应该怎么关闭？bev要不要释放？！
     return evutil_closesocket(fd);
@@ -148,7 +148,7 @@ ievent_buffer_event_socket_connect(ievent_buffer_event_t *bev,
     isshe_sockaddr_t *sockaddr, isshe_socklen_t socklen)
 {
     return bufferevent_socket_connect(bev,
-        (struct sockaddr*)sockaddr, socklen);
+        (isshe_sa_t *)sockaddr, socklen);
 }
 
 
@@ -204,7 +204,7 @@ ievent_buffer_event_write(ievent_buffer_event_t *bev, const void *data, size_t s
     return bufferevent_write(bev, data, size);
 }
 
-isshe_socket_t
+isshe_fd_t
 ievent_buffer_event_getfd(ievent_buffer_event_t *bev)
 {
     return bufferevent_getfd(bev);
