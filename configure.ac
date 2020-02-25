@@ -43,7 +43,8 @@ AC_CONFIG_FILES([Makefile
                  test/protocol/Makefile
                  test/protocol/isout/Makefile])
 
-ISOUT_CONFIG_FILES([lib/openssl/config])
+# openssl暂未用到，先去掉
+# ISOUT_CONFIG_FILES([lib/openssl/config])
 
 AC_CONFIG_SUBDIRS([lib/libevent
                    lib/libisshe])
