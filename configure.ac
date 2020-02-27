@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(isout, 1.0, i.sshe@foxmail.com)
+AC_INIT(isout, 1.0.0, i.sshe@foxmail.com)
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -37,16 +37,16 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([inet_ntoa memset])
 
 AC_CONFIG_FILES([Makefile
-                 lib/Makefile
-                 src/Makefile
-                 test/Makefile
-                 test/protocol/Makefile
-                 test/protocol/isout/Makefile])
+                lib/Makefile
+                src/Makefile
+                test/Makefile
+                test/protocol/Makefile
+                test/protocol/isout/Makefile])
 
 # openssl暂未用到，先去掉
 # ISOUT_CONFIG_FILES([lib/openssl/config])
 
 AC_CONFIG_SUBDIRS([lib/libevent
-                   lib/libisshe])
+                lib/libisshe])
 
 AC_OUTPUT
