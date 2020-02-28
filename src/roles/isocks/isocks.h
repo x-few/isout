@@ -13,6 +13,7 @@
 #include "isocks_socks.h"
 #include "isocks_session.h"
 #include "isocks_event.h"
+#include "isocks_mode.h"
 
 
 #define ISOCKS_DEFAULT_MEMPOOL_SIZE        4096

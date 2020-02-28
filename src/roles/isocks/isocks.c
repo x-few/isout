@@ -82,6 +82,10 @@ void isocks_start(void *ctx)
             goto isocks_error;
         }
 
+        // TODO
+        isocks_pac_file_generate(ISOUT_DEFAULT_PAC_FILE);
+        isocks_mode_set();
+
         isocks_config->inarray[i].data = (void *)listener;
     }
 

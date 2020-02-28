@@ -35,6 +35,7 @@ isout_out_SOURCES = \
 	roles/isocks/isocks_socks.c \
 	roles/isocks/isocks_event.c \
 	roles/isocks/isocks_session.c \
+	roles/isocks/isocks_mode.c \
 	roles/isocks/isocks.c \
 	roles/iproxy/iproxy_config.c \
 	roles/iproxy/iproxy_event.c \
