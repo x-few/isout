@@ -10,7 +10,7 @@
 #define ISOUT_PROXY_ON              1
 #define ISOUT_PROXY_OFF             0
 
-isshe_int_t isocks_pac_file_generate(isshe_char_t *filename);
+isshe_int_t isocks_pac_file_generate(isshe_char_t *filename, isshe_log_t *log);
 
 isshe_int_t isocks_mode_set();
 

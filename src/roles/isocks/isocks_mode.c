@@ -71,7 +71,7 @@ isocks_auto_proxy_off(isshe_char_t *network_service)
 }
 
 isshe_int_t
-isocks_pac_file_generate(isshe_char_t *filename)
+isocks_pac_file_generate(isshe_char_t *filename, isshe_log_t *log)
 {
     isshe_fd_t  fd;
     isshe_char_t *default_pac_content =
@@ -81,7 +81,11 @@ isocks_pac_file_generate(isshe_char_t *filename)
         "    return proxy;\n"
         "}";
 
-    fd = isshe_open(filename, O_WRONLY | O_CREAT);
+    fd = isshe_open(filename, ISSHE_FILE_CRWR, ISSHE_FILE_DEFAULT_ACCESS);
+    if (fd == ISSHE_INVALID_FD) {
+        isshe_log_debug_errno(log, errno, "open %s failed", filename);
+        return ISSHE_ERROR;
+    }
     isshe_write(fd, default_pac_content, strlen(default_pac_content));
     isshe_close(fd);
 
