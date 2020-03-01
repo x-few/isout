@@ -295,19 +295,19 @@ isout_protocol_options_print(isout_protocol_options_t *opts, isshe_log_t *log)
     }
 
     if (opts->port != 0) {
-        isshe_log_info(log, " - port: %u", opts->port);
+        isshe_log_info(log, " - port: %ud", opts->port);
     }
 
     if (opts->addr_type != 0) {
-        isshe_log_info(log, " - addr_type: %u", opts->addr_type);
+        isshe_log_info(log, " - addr_type: %ud", opts->addr_type);
     }
 
     if (opts->data_len != 0) {
-        isshe_log_info(log, " - data_len: %u", opts->data_len);
+        isshe_log_info(log, " - data_len: %ud", opts->data_len);
     }
 
     if (opts->session_crypto_algo) {
-        isshe_log_info(log, " - session_crypto_algo: %u", opts->session_crypto_algo);
+        isshe_log_info(log, " - session_crypto_algo: %ud", opts->session_crypto_algo);
     }
 
     if (opts->session_crypto_key) {
