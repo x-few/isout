@@ -11,7 +11,7 @@ void test1()
     isshe_char_t    data[] = "isshe&chudai";
     isshe_size_t    data_len = strlen(data);
 
-    log = isshe_log_instance_get(7, NULL);
+    log = isshe_log_instance_get(7, NULL, NULL);
     if (!log) {
         printf("log == NULL");
         return ;
