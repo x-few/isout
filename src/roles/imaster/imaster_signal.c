@@ -41,7 +41,7 @@ void imaster_triggered_signal_del(int signo)
 
 void imaster_signal_handler(int signo)
 {
-    isshe_log_t *log = isshe_log_instance_get(ISSHE_LOG_NOTICE, NULL);
+    isshe_log_t *log = isshe_log_instance_get(ISSHE_LOG_NOTICE, NULL, NULL);
     isshe_log_debug(log, "%d handler signo %d", getpid(), signo);
     imaster_triggered_signal_add(signo);
 

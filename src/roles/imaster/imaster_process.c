@@ -185,7 +185,7 @@ imaster_process_print_trace(isshe_log_t *log)
         isshe_log_debug(log, "%s", strings[i]);
     }
 
-    isshe_free(strings, log);
+    isshe_free(strings);
 }
 
 void
@@ -243,7 +243,7 @@ void imaster_process_status_get(void)
     isshe_log_t          *log;
     isshe_int_t     i;
 
-    log = isshe_log_instance_get(ISSHE_LOG_NOTICE, NULL);
+    log = isshe_log_instance_get(ISSHE_LOG_NOTICE, NULL, NULL);
     while(ISSHE_TRUE) {
         pid = waitpid(-1, &status, WNOHANG);
         isshe_log_info(log, "waitpid: pid = %d, exit status = %d", pid, status);

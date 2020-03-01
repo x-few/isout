@@ -81,7 +81,7 @@ isout_protocol_options_from_string(
             break;
         case ISOUT_OPTION_ADDR:
             if (!options->addr) {
-                options->addr = isshe_strdup_mp(
+                options->addr = isshe_memdup(
                     (isshe_char_t *)opt->data, opt->len, mempool);
                 options->addr_len = opt->len;
             }
@@ -105,14 +105,14 @@ isout_protocol_options_from_string(
             break;
         case ISOUT_OPTION_SESSION_CRYPTO_KEY:
             if (!options->session_crypto_key) {
-                options->session_crypto_key = isshe_strdup_mp(
-                    (isshe_char_t *)opt->data, opt->len, mempool);
+                options->session_crypto_key = isshe_memdup(
+                    opt->data, opt->len, mempool);
             }
             break;
         case ISOUT_OPTION_SESSION_CRYPTO_IV:
             if (!options->session_crypto_iv) {
-                options->session_crypto_iv = isshe_strdup_mp(
-                    (isshe_char_t *)opt->data, opt->len, mempool);
+                options->session_crypto_iv = isshe_memdup(
+                    opt->data, opt->len, mempool);
             }
             break;
         default:

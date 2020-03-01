@@ -34,7 +34,6 @@ iconfig_log_parse(isshe_json_t *json, isshe_int_t *level)
 
     tmp = isshe_json_get_object(log, "filename");
     if (isshe_json_is_string(tmp)) {
-        //filename = isshe_strdup(tmp->vstring, strlen(tmp->vstring) + 1);
         filename = tmp->vstring;    // 直接指向，不复制了
     }
 
@@ -149,7 +148,7 @@ void iconfig_parse(iconfig_t *config, const isshe_char_t *filename)
     // print json
     buf = isshe_json_print(json);
     printf("%s\n", buf);
-    isshe_free(buf, NULL);
+    isshe_free(buf);
 
     // free json
     //isshe_json_delete(json);
@@ -160,7 +159,7 @@ iconfig_t *iconfig_create()
 {
     iconfig_t *config;
 
-    config = (iconfig_t *)isshe_malloc(sizeof(iconfig_t), NULL);
+    config = (iconfig_t *)isshe_malloc(sizeof(iconfig_t));
     if (!config) {
         return NULL;
     }
@@ -177,10 +176,16 @@ void iconfig_destroy(iconfig_t **pconfig)
         return ;
     }
 
-    isshe_free(config->log_file, NULL);
+    // TODO 完善这里：改用内存池；释放log。
+    isshe_free(config->log_file);
     isshe_json_delete(config->config_json);
     //isshe_memzero(config, sizeof(iconfig_t));
-    isshe_free(config, NULL);
+
+    if (config->mempool) {
+        isshe_mempool_destroy(config->mempool);
+    }
+
+    isshe_free(config);
     *pconfig = NULL;
 }
 

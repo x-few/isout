@@ -42,7 +42,7 @@ iproxy_sighdr_backtrace(isshe_int_t signo)
         isshe_log_info(ilog, "%s", strings[i]);
     }
 
-    isshe_free(strings, NULL);
+    isshe_free(strings);
     // TODO
 
     exit(0);

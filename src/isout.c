@@ -52,10 +52,9 @@ int main(int argc, char *argv[])
 
     config = iconfig_create();
     if (!config) {
-        printf("[error] failed to new config\n");
+        isshe_log_stderr(0, "[error] failed to new config\n");
         exit(0);
     }
-
 
     isout_optget(argc, argv, config);
 
@@ -63,8 +62,17 @@ int main(int argc, char *argv[])
 
     iconfig_print(config);
 
+    // TODO 重新考虑需要的内存量。
+    config->mempool = isshe_mempool_create(ISSHE_DEFAULT_MEMPOOL_SIZE, NULL);
+    if (!config->mempool) {
+        isshe_log_stderr(0, "[error] failed to create mempool for isout");
+        exit(0);
+    }
+
     // 配置log
-    config->log = isshe_log_instance_get(config->log_level, config->log_file);
+    config->log = isshe_log_instance_get(config->log_level, config->log_file, config->mempool);
+
+    isshe_mempool_log_set(config->mempool, config->log);
 
     if (isshe_process_title_init(argc, argv) == ISSHE_ERROR) {
         isshe_log_alert(config->log, "isshe_process_title_init failed");
@@ -74,6 +82,6 @@ int main(int argc, char *argv[])
     // master接管进程
     imaster_start(config);
 
-    isshe_log_instance_free();
     iconfig_destroy(&config);
+    isshe_log_instance_free();
 }

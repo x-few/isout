@@ -38,7 +38,7 @@ void iproxy_start(void *ctx)
 
     // 初始化log
     iproxy_config->log = isshe_log_create(
-        iproxy_config->log_level, iproxy_config->log_file);
+        iproxy_config->log_level, iproxy_config->log_file, mempool);
     if (!iproxy_config->log) {
         isshe_log_alert(log, "create iproxy log failed");
         goto iproxy_error;
