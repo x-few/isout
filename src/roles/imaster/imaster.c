@@ -19,6 +19,8 @@ void imaster_start(iconfig_t *config)
     // 起工作进程
     imaster_roles_process_start(config);
 
+    isshe_mempool_stat_print(config->mempool, config->log);
+
     // 清空信号集，sigsuspend则能被所有信号中断
     sigemptyset(&set);
     while(ISSHE_TRUE) {
@@ -54,6 +56,7 @@ void imaster_start(iconfig_t *config)
         }
 
         if (imaster_roles_process_all_existed()) {
+            isshe_log_debug(config->log, "All roles exited...");
             break;
         }
     }

@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
     // master接管进程
     imaster_start(config);
 
-    iconfig_destroy(&config);
+    isshe_log_debug(config->log, "isout exited...");
+    iconfig_destroy(config);
     isshe_log_instance_free();
 }

@@ -169,9 +169,8 @@ iconfig_t *iconfig_create()
 }
 
 
-void iconfig_destroy(iconfig_t **pconfig)
+void iconfig_destroy(iconfig_t *config)
 {
-    iconfig_t *config = *pconfig;
     if (!config) {
         return ;
     }
@@ -186,6 +185,5 @@ void iconfig_destroy(iconfig_t **pconfig)
     }
 
     isshe_free(config);
-    *pconfig = NULL;
 }
 

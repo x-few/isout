@@ -32,6 +32,6 @@ isshe_connection_t *iconfig_connection_parse(isshe_mempool_t *pool,
 
 iconfig_t *iconfig_create();
 
-void iconfig_destroy(iconfig_t **pconfig);
+void iconfig_destroy(iconfig_t *config);
 
 #endif
