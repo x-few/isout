@@ -48,7 +48,15 @@ void isout_optget(int argc, char *argv[], iconfig_t *config)
 int main(int argc, char *argv[])
 {
     // 解析config
-    iconfig_t   *config;
+    iconfig_t       *config = NULL;
+    isshe_mempool_t *mempool = NULL;
+
+    // TODO 重新考虑需要的内存量。
+    mempool = isshe_mempool_create(ISSHE_DEFAULT_MEMPOOL_SIZE, NULL);
+    if (!mempool) {
+        isshe_log_stderr(0, "[error] failed to create mempool for isout");
+        exit(0);
+    }
 
     config = iconfig_create();
     if (!config) {
@@ -56,18 +64,13 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
+    config->mempool = mempool;
+
     isout_optget(argc, argv, config);
 
-    iconfig_parse(config, config->config_file);
+    iconfig_parse(config, config->config_file, mempool);
 
     iconfig_print(config);
-
-    // TODO 重新考虑需要的内存量。
-    config->mempool = isshe_mempool_create(ISSHE_DEFAULT_MEMPOOL_SIZE, NULL);
-    if (!config->mempool) {
-        isshe_log_stderr(0, "[error] failed to create mempool for isout");
-        exit(0);
-    }
 
     // 配置log
     config->log = isshe_log_instance_get(config->log_level, config->log_file, config->mempool);

@@ -23,7 +23,8 @@ struct iconfig_s
 
 void iconfig_print(iconfig_t *config);
 
-void iconfig_parse(iconfig_t *conf, const char *file);
+void iconfig_parse(iconfig_t *conf,
+    const isshe_char_t *file, isshe_mempool_t *mempool);
 
 isshe_char_t *iconfig_log_parse(isshe_json_t *json, isshe_int_t *level);
 

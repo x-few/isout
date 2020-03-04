@@ -1,6 +1,7 @@
 AM_CPPFLAGS = -g -O2 \
-	-I$(top_srcdir)/lib/libisshe/include/core \
-	-I$(top_srcdir)/lib/libisshe/include/crypto \
+	-I$(top_srcdir)/lib/libisshe/src/base \
+	-I$(top_srcdir)/lib/libisshe/src/crypto \
+	-I$(top_srcdir)/lib/libisshe/src/json \
 	-I$(top_srcdir)/lib/libevent/include \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/base \

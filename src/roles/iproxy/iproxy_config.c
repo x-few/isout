@@ -13,7 +13,7 @@ iproxy_config_parse(iproxy_config_t *config,
         return ISSHE_ERROR;
     }
 
-    iproxy_json = isshe_json_get_object(json, IPROXY_CONFIG_KEY);
+    iproxy_json = isshe_json_object_get(json, IPROXY_CONFIG_KEY);
     if (!iproxy_json) {
         isshe_log_alert(log, "iproxy: cannot found iproxy config");
         return ISSHE_ERROR;
@@ -23,17 +23,17 @@ iproxy_config_parse(iproxy_config_t *config,
     config->log_file = iconfig_log_parse(iproxy_json, &config->log_level);
 
     // 解析出口/入口的地址、端口、协议
-    tmp = isshe_json_get_object(iproxy_json, "in");
+    tmp = isshe_json_object_get(iproxy_json, "in");
     config->inarray = iconfig_connection_parse(config->mempool, tmp, &config->nin);
     if (!config->inarray) {
         isshe_log_alert(log, "iproxy: invalid inbound config");
         return ISSHE_ERROR;
     }
 
-    tmp = isshe_json_get_object(iproxy_json, "connpool");
+    tmp = isshe_json_object_get(iproxy_json, "connpool");
     config->connpool_size = IPROXY_CONNPOOL_DEFAULT_SIZE;
     if (isshe_json_is_number(tmp)) {
-        config->connpool_size = tmp->vint;
+        config->connpool_size = (isshe_size_t)tmp->vnumber;
     }
 
     return ISSHE_OK;

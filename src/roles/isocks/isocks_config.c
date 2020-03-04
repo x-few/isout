@@ -12,7 +12,7 @@ isocks_config_parse(isocks_config_t *config, isshe_json_t *json, isshe_log_t *lo
         return ISSHE_ERROR;
     }
 
-    isocks_json = isshe_json_get_object(json, ISOCKS_CONFIG_KEY);
+    isocks_json = isshe_json_object_get(json, ISOCKS_CONFIG_KEY);
     if (!isocks_json) {
         isshe_log_alert(log, "isocks: cannot found isocks config");
         return ISSHE_ERROR;
@@ -22,24 +22,24 @@ isocks_config_parse(isocks_config_t *config, isshe_json_t *json, isshe_log_t *lo
     config->log_file = iconfig_log_parse(isocks_json, &config->log_level);
 
     // 解析出口/入口的地址、端口、协议
-    tmp = isshe_json_get_object(isocks_json, "in");
+    tmp = isshe_json_object_get(isocks_json, "in");
     config->inarray = iconfig_connection_parse(config->mempool, tmp, &config->nin);
     if (!config->inarray) {
         isshe_log_alert(log, "isocks: invalid inbound config");
         return ISSHE_ERROR;
     }
 
-    tmp = isshe_json_get_object(isocks_json, "out");
+    tmp = isshe_json_object_get(isocks_json, "out");
     config->outarray = iconfig_connection_parse(config->mempool, tmp, &config->nout);
     if (!config->outarray) {
         isshe_log_alert(log, "isocks: invalid outbound config");
         return ISSHE_ERROR;
     }
 
-    tmp = isshe_json_get_object(isocks_json, "connpool");
+    tmp = isshe_json_object_get(isocks_json, "connpool");
     config->connpool_size = ISOCKS_CONNPOOL_DEFAULT_SIZE;
     if (isshe_json_is_number(tmp)) {
-        config->connpool_size = tmp->vint;
+        config->connpool_size = (isshe_size_t)(tmp->vnumber);
     }
 
     return ISSHE_OK;

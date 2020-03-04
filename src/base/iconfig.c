@@ -27,17 +27,17 @@ iconfig_log_parse(isshe_json_t *json, isshe_int_t *level)
         return NULL;
     }
 
-    log = isshe_json_get_object(json, "log");
+    log = isshe_json_object_get(json, "log");
     if (!log) {
         return NULL;
     }
 
-    tmp = isshe_json_get_object(log, "filename");
+    tmp = isshe_json_object_get(log, "filename");
     if (isshe_json_is_string(tmp)) {
         filename = tmp->vstring;    // 直接指向，不复制了
     }
 
-    tmp = isshe_json_get_object(log, "level");
+    tmp = isshe_json_object_get(log, "level");
     if (tmp && tmp->type == ISSHE_JSON_STRING) {
         *level = isshe_log_level_to_number(tmp->vstring);
         if (*level == ISSHE_ERROR) {
@@ -69,7 +69,7 @@ iconfig_connection_parse(isshe_mempool_t *mempool,
         return NULL;
     }
 
-    n = isshe_json_get_array_size(json_array);
+    n = isshe_json_array_size(json_array);
 
     conn_array = isshe_mpalloc(mempool, n * sizeof(isshe_connection_t));
     if (!conn_array) {
@@ -78,7 +78,7 @@ iconfig_connection_parse(isshe_mempool_t *mempool,
     }
 
     for (i = 0; i < n; i++) {
-        conn_json = isshe_json_get_array(json_array, i);
+        conn_json = isshe_json_array_item_get(json_array, i);
         if (!conn_json) {
             isshe_log_alert(log, "get array item failed: index = %d", i);
             return NULL;
@@ -87,7 +87,7 @@ iconfig_connection_parse(isshe_mempool_t *mempool,
         conn = &conn_array[i];
         
 
-        tmp_json = isshe_json_get_object(conn_json, "addr");
+        tmp_json = isshe_json_object_get(conn_json, "addr");
         if (!isshe_json_is_string(tmp_json)) {
             isshe_log_alert(log, "config 'addr' is not string");
             return NULL;
@@ -111,14 +111,16 @@ iconfig_connection_parse(isshe_mempool_t *mempool,
             return NULL;
         }
 
-        tmp_json = isshe_json_get_object(conn_json, "port");
+        tmp_json = isshe_json_object_get(conn_json, "port");
         if (!isshe_json_is_number(tmp_json)) {
             isshe_log_alert(log, "config 'port' is not number");
             return NULL;
         }
-        isshe_address_port_set(conn->addr, (isshe_uint16_t)(tmp_json->vint));
 
-        tmp_json = isshe_json_get_object(conn_json, "protocol");
+        isshe_address_port_set(conn->addr,
+            (isshe_uint16_t)(tmp_json->vnumber));
+
+        tmp_json = isshe_json_object_get(conn_json, "protocol");
         if (!isshe_json_is_string(tmp_json)) {
             isshe_log_alert(log, "config 'protocol' is not string");
             return NULL;
@@ -134,21 +136,24 @@ iconfig_connection_parse(isshe_mempool_t *mempool,
 
 
 
-void iconfig_parse(iconfig_t *config, const isshe_char_t *filename)
+void iconfig_parse(iconfig_t *config,
+    const isshe_char_t *filename,
+    isshe_mempool_t *mempool)
 {
     isshe_json_t *json;
-    isshe_char_t *buf;
+    //isshe_char_t *buf;
 
     // read json
-    json = isshe_read_json(filename);
+    json = isshe_json_file_parse(filename, mempool);
 
     // parse config: log
     config->log_file = iconfig_log_parse(json, &config->log_level);
 
     // print json
-    buf = isshe_json_print(json);
-    printf("%s\n", buf);
-    isshe_free(buf);
+    //buf = 
+    isshe_json_print(json, NULL);
+    //printf("%s\n", buf);
+    //isshe_free(buf);
 
     // free json
     //isshe_json_delete(json);
@@ -177,7 +182,7 @@ void iconfig_destroy(iconfig_t *config)
 
     // TODO 完善这里：改用内存池；释放log。
     isshe_free(config->log_file);
-    isshe_json_delete(config->config_json);
+    isshe_json_delete(config->config_json, config->mempool);
     //isshe_memzero(config, sizeof(iconfig_t));
 
     if (config->mempool) {

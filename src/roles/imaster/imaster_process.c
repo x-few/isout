@@ -123,8 +123,8 @@ imaster_roles_process_start(iconfig_t *config)
     isshe_int_t     len;
     isshe_pid_t     index;
 
-    jsroles_array = isshe_json_get_object(config->config_json, "enable_roles");
-    array_len = isshe_json_get_array_size(jsroles_array);
+    jsroles_array = isshe_json_object_get(config->config_json, "enable_roles");
+    array_len = isshe_json_array_size(jsroles_array);
     if (!jsroles_array
     || !isshe_json_is_array(jsroles_array)
     || array_len <= 0) {
@@ -134,7 +134,7 @@ imaster_roles_process_start(iconfig_t *config)
 
     int i;
     for (i = 0; i < array_len; i++) {
-        jsrole = isshe_json_get_array(jsroles_array, i);
+        jsrole = isshe_json_array_item_get(jsroles_array, i);
         if (!jsrole
         || jsrole->type != ISSHE_JSON_STRING
         || strlen(jsrole->vstring) <= 0) {
