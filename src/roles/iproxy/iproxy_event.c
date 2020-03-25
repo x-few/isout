@@ -309,7 +309,9 @@ void iproxy_event_in_event_cb(
     if (what & (BEV_EVENT_EOF|BEV_EVENT_ERROR)) {
         if (what & BEV_EVENT_ERROR) {
             if (errno) {
-                isshe_log_alert_errno(log, errno, "in connection error");
+                isshe_log_alert_errno(log, errno, "in connection error, bev = %p", bev);
+            } else {
+                isshe_log_alert(log, "in connection error, bev = %p", bev);
             }
         }
 
@@ -343,6 +345,8 @@ static void iproxy_event_out_event_cb(
         if (what & BEV_EVENT_ERROR) {
             if (errno) {
                 isshe_log_alert_errno(log, errno, "out connection error, bev = %p", bev);
+            } else {
+                isshe_log_alert(log, "out connection error, bev = %p", bev);
             }
         }
 

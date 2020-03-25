@@ -381,7 +381,9 @@ void isocks_event_out_event_cb(
 	if (what & (IEVENT_BEV_EVENT_EOF|IEVENT_BEV_EVENT_ERROR)) {
         if (what & IEVENT_BEV_EVENT_ERROR) {
             if (errno) {
-                isshe_log_alert_errno(log, errno, "out connection error");
+                isshe_log_alert_errno(log, errno, "out connection error, bev = %p", bev);
+            } else {
+                isshe_log_alert(log, "out connection error, bev = %p", bev);
             }
         }
 
