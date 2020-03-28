@@ -47,6 +47,10 @@ isocks_session_free(isocks_session_t *session, isshe_int_t flag)
 
     // 如果两个都关闭了，就释放其余所有资源，如mempool
     if (!session->inconn && !session->outconn && session->mempool) {
+        if (session->inbytes > 1024 * 1024 || session->outbytes > 1024 * 1024) {
+            isshe_log_debug(log, "inbytes = %ud, outbytes = %ud", session->inbytes, session->outbytes);
+            exit(0);
+        }
         isshe_log_debug(log, "session free: free common");
         isshe_mempool_destroy(session->mempool);
     }

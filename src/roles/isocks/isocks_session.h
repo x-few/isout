@@ -19,6 +19,8 @@ struct isocks_session_s
     isout_protocol_header_t     *outhdr;
     isout_protocol_options_t    *outopts;       // out的isout协议的选项
     isshe_address_t             inaddr;
+    isshe_uint64_t              inbytes;
+    isshe_uint64_t              outbytes;
     //isocks_socks5_info_t        socks5;         // 保存socks5的信息
 };
 

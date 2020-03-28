@@ -81,6 +81,8 @@ isocks_event_in_transfer_data(isocks_session_t *session)
         ievent_buffer_event_write(session->outbev, &header, sizeof(header));
         ievent_buffer_event_write(session->outbev, stropts, opts_len);
         ievent_buffer_event_write(session->outbev, data, data_len);
+
+        session->inbytes += data_len;
     }
 
 
@@ -210,13 +212,13 @@ isocks_event_out_transfer_data(isocks_session_t *session)
 
             isshe_log_debug(log, "out(%p) -> in(%p): data = (%d)",
                 src_bev, dst_bev, header.data_len);
-                    // 转发头部、选项、数据
 
             // 转发数据
             ievent_buffer_event_write(dst_bev, data, header.data_len);
 
             conn->status = ISOUT_STATUS_READ_HDR;
             //isshe_memzero(phdr, header_len);  // 用完清零
+            session->outbytes += header.data_len;
         }
     }
 
@@ -470,6 +472,8 @@ isocks_event_accept_cb(ievent_conn_listener_t *listener,
         isshe_log_alert(config->log, "malloc session failed");
         goto isocks_event_accept_error;
     }
+
+    isshe_memzero(session, sizeof(isocks_session_t));
 
     // 从内存池中取两个连接
     session->inconn = isshe_connection_get(config->connpool);

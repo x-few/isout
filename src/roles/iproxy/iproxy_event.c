@@ -404,6 +404,8 @@ iproxy_event_accept_cb(ievent_conn_listener_t *listener,
         goto iproxy_event_accept_error;
     }
 
+    isshe_memzero(session, sizeof(isocks_session_t));
+
     // 从内存池中取两个连接
     session->inconn = isshe_connection_get(config->connpool);
     if (!session->inconn) {
