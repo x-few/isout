@@ -191,6 +191,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
 
             conn->status = ISOUT_STATUS_READ_HDR;
             //isshe_memzero(phdr, header_len);  // 用完清零
+            session->inbytes += header.data_len;
         }
     }
 
@@ -227,6 +228,7 @@ iproxy_event_out_transfer_data(iproxy_session_t *session)
     log = session->config->log;
     src_bev = session->outbev;
     dst_bev = session->inbev;
+
     buffer = ievent_buffer_event_get_input(src_bev);
     if (!buffer) {
         isshe_log_error(log, "get input buffer failed");
@@ -281,6 +283,8 @@ iproxy_event_out_transfer_data(iproxy_session_t *session)
         ievent_buffer_event_write(dst_bev, &header, sizeof(header));
         ievent_buffer_event_write(dst_bev, stropts, opts_len);
         ievent_buffer_event_write(dst_bev, data, data_len);
+        session->outbytes += data_len;
+        isshe_log_error(log, "---isshe---iproxy_event_out_transfer_data---");
     }
 
     return ISSHE_OK;
