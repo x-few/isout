@@ -8,7 +8,7 @@
 
 #if defined ISSHE_APPLE
 //"networksetup -setautoproxyurl %s %s"; MacOS无法使用像file://这样的url进行代理文件设置。
-static isshe_char_t *auto_proxy_url_fmt = "networksetup -setsocksfirewallproxy %s 127.0.0.1 1080 %s";
+static isshe_char_t *auto_proxy_url_fmt = "networksetup -setsocksfirewallproxy %s 127.0.0.1 1081 %s";
 //"networksetup -setautoproxystate %s %s";
 static isshe_char_t *auto_proxy_mode_fmt = "networksetup -setsocksfirewallproxystate %s %s";
 static isshe_char_t *on = "on";
@@ -75,7 +75,7 @@ isocks_pac_file_generate(isshe_char_t *filename, isshe_log_t *log)
 {
     isshe_fd_t  fd;
     isshe_char_t *default_pac_content =
-        "var proxy = \"SOCKS5 127.0.0.1:1080; SOCKS 127.0.0.1:1080; DIRECT;\";\n"
+        "var proxy = \"SOCKS5 127.0.0.1:1081; SOCKS 127.0.0.1:1081; DIRECT;\";\n"
         "\n"
         "function FindProxyForURL(url, host) {\n"
         "    return proxy;\n"

@@ -20,6 +20,7 @@ isocks_event_in_transfer_data(isocks_session_t *session)
     dst_bev = session->outbev;
     buffer = ievent_buffer_event_get_input(src_bev);
     if (!buffer) {
+        isshe_log_error(log, "get input buffer failed");
         return ISSHE_ERROR;
     }
 
@@ -36,6 +37,7 @@ isocks_event_in_transfer_data(isocks_session_t *session)
         if (isout_protocol_send_opts_generate(&opts,
         session->outopts, (isshe_address_t *)(&session->inaddr),
         session->mempool, log) == ISSHE_ERROR) {
+            isshe_log_error(log, "isout options generate failed");
             goto isocks_event_in_td_error;
         }
 
@@ -118,6 +120,7 @@ isocks_event_out_transfer_data(isocks_session_t *session)
     header_len = sizeof(isout_protocol_header_t);
     buffer = ievent_buffer_event_get_input(src_bev);
     if (!buffer) {
+        isshe_log_error(log, "ievent_buffer_event_get_input failed");
         return ISSHE_ERROR;
     }
 
@@ -136,6 +139,7 @@ isocks_event_out_transfer_data(isocks_session_t *session)
             read_len = ievent_buffer_event_read(
                 src_bev, phdr, header_len);
             if (read_len == ISSHE_ERROR || read_len != header_len) {
+                isshe_log_error(log, "read header failed");
                 return ISSHE_ERROR;
             }
 
@@ -164,6 +168,7 @@ isocks_event_out_transfer_data(isocks_session_t *session)
             read_len = ievent_buffer_event_read(
                 src_bev, stropts, header.opts_len);
             if (read_len == ISSHE_ERROR || read_len != header.opts_len) {
+                isshe_log_error(log, "read options failed");
                 return ISSHE_ERROR;
             }
 
@@ -193,6 +198,7 @@ isocks_event_out_transfer_data(isocks_session_t *session)
 
             read_len = ievent_buffer_event_read(src_bev, data, header.data_len);
             if (read_len == ISSHE_ERROR || read_len != header.data_len) {
+                isshe_log_error(log, "read data failed");
                 return ISSHE_ERROR;
             }
 
@@ -204,6 +210,7 @@ isocks_event_out_transfer_data(isocks_session_t *session)
 
             isshe_log_debug(log, "out(%p) -> in(%p): data = (%d)",
                 src_bev, dst_bev, header.data_len);
+                    // 转发头部、选项、数据
 
             // 转发数据
             ievent_buffer_event_write(dst_bev, data, header.data_len);
@@ -313,6 +320,7 @@ isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
     }
 
     if (ret == ISSHE_ERROR) {
+        isshe_log_error(log, "handshack or transfer data failed");
         isocks_session_free(session,
             ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
     }
@@ -325,6 +333,7 @@ void isocks_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
 
     if (isocks_event_out_transfer_data(session) == ISSHE_ERROR) {
         // 禁用读写、关闭、释放连接
+        isshe_log_alert(session->config->log, "isocks_event_out_read_cb error!!!");
         isocks_session_free(session,
             ISOCKS_SESSION_FREE_IN | ISOCKS_SESSION_FREE_OUT);
     }
@@ -340,6 +349,8 @@ void isocks_event_in_event_cb(
 
     log = session->config->log;
     partner = session->outbev;
+
+    isshe_log_debug(log, "---isocks_event_in_event_cb---bev = %p", bev);
 
     assert(bev == session->inbev);
 
@@ -375,6 +386,8 @@ void isocks_event_out_event_cb(
 
     log = session->config->log;
     partner = session->inbev;
+
+    isshe_log_debug(log, "---isocks_event_out_event_cb---bev = %p", bev);
 
     assert(bev == session->outbev);
 

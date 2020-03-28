@@ -88,6 +88,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
     header_len = sizeof(isout_protocol_header_t);
     buffer = ievent_buffer_event_get_input(src_bev);
     if (!buffer) {
+        isshe_log_error(log, "get input buffer failed");
         return ISSHE_ERROR;
     }
 
@@ -106,6 +107,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
             read_len = ievent_buffer_event_read(
                 src_bev, phdr, header_len);
             if (read_len == ISSHE_ERROR || read_len != header_len) {
+                isshe_log_error(log, "read isout header failed");
                 return ISSHE_ERROR;
             }
 
@@ -135,6 +137,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
             read_len = ievent_buffer_event_read(
                 src_bev, stropts, header.opts_len);
             if (read_len == ISSHE_ERROR || read_len != header.opts_len) {
+                isshe_log_error(log, "read isout options failed");
                 return ISSHE_ERROR;
             }
 
@@ -171,6 +174,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
 
             read_len = ievent_buffer_event_read(src_bev, data, header.data_len);
             if (read_len == ISSHE_ERROR || read_len != header.data_len) {
+                isshe_log_error(log, "read isout header failed");
                 return ISSHE_ERROR;
             }
 
@@ -225,6 +229,7 @@ iproxy_event_out_transfer_data(iproxy_session_t *session)
     dst_bev = session->inbev;
     buffer = ievent_buffer_event_get_input(src_bev);
     if (!buffer) {
+        isshe_log_error(log, "get input buffer failed");
         return ISSHE_ERROR;
     }
 
@@ -288,6 +293,7 @@ static void iproxy_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
 
     if (iproxy_event_out_transfer_data(session) == ISSHE_ERROR) {
         // 释放资源、释放连接
+        isshe_log_alert(session->config->log, "iproxy_event_out_read_cb error!!!");
         iproxy_session_free(session,
             IPROXY_SESSION_FREE_IN | IPROXY_SESSION_FREE_OUT);
     }
@@ -303,6 +309,8 @@ void iproxy_event_in_event_cb(
 
     log = session->config->log;
     partner = session->outbev;
+
+    isshe_log_debug(log, "---iproxy_event_in_event_cb---bev = %p", bev);
 
     assert(bev == session->inbev);
 
@@ -338,6 +346,8 @@ static void iproxy_event_out_event_cb(
 
     log = session->config->log;
     partner = session->inbev;
+
+    isshe_log_debug(log, "---iproxy_event_out_event_cb---bev = %p", bev);
 
     assert(bev == session->outbev);
 
