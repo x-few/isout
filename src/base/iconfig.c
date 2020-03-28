@@ -8,6 +8,7 @@ void iconfig_print(iconfig_t *config)
         "config file        : %s" ISSHE_LINEFEED
         "log file           : %s" ISSHE_LINEFEED
         "log level          : %d" ISSHE_LINEFEED
+        "-----------------isout config----------------" ISSHE_LINEFEED
         ,
         config->config_file,
         config->log_file,
