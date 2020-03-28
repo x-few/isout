@@ -219,6 +219,7 @@ isocks_event_out_transfer_data(isocks_session_t *session)
             conn->status = ISOUT_STATUS_READ_HDR;
             //isshe_memzero(phdr, header_len);  // 用完清零
             session->outbytes += header.data_len;
+            isshe_log_debug(log, "---isshe---isocks_event_out_transfer_data---outbytes = %ud", session->outbytes);
         }
     }
 

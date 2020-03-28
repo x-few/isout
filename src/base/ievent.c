@@ -199,7 +199,7 @@ ievent_buffer_event_read(ievent_buffer_event_t *bev, void *data, isshe_size_t si
 }
 
 isshe_int_t
-ievent_buffer_event_write(ievent_buffer_event_t *bev, const void *data, size_t size)
+ievent_buffer_event_write(ievent_buffer_event_t *bev, const void *data, isshe_size_t size)
 {
     return bufferevent_write(bev, data, size);
 }
@@ -225,7 +225,15 @@ ievent_buffer_add_buffer(ievent_buffer_t *dst, ievent_buffer_t *src)
 
 isshe_int_t
 ievent_buffer_copyout(
-    ievent_buffer_t *buf, void *data_out, size_t data_len)
+    ievent_buffer_t *buf, void *data_out, isshe_size_t data_len)
 {
     return evbuffer_copyout(buf, data_out, data_len);
+}
+
+isshe_void_t
+ievent_buffer_event_water_mark_set(
+    ievent_buffer_event_t *bev, isshe_int_t event,
+    isshe_size_t lowmark, isshe_size_t highmark)
+{
+    bufferevent_setwatermark(bev, (isshe_short_t)event, lowmark, highmark);
 }

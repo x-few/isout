@@ -1,8 +1,17 @@
 #include "iproxy.h"
 
-static void iproxy_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx);
-static void iproxy_event_out_event_cb(
-    ievent_buffer_event_t *bev, short what, void *ctx);
+static isshe_void_t iproxy_event_out_read_cb(
+    ievent_buffer_event_t *bev, isshe_void_t *ctx);
+static isshe_void_t iproxy_event_out_event_cb(
+    ievent_buffer_event_t *bev, isshe_short_t what, isshe_void_t *ctx);
+static isshe_void_t iproxy_event_out_write_cb(
+    ievent_buffer_event_t *bev, isshe_void_t *ctx);
+static isshe_void_t iproxy_event_in_read_cb(
+    ievent_buffer_event_t *bev, isshe_void_t *ctx);
+static isshe_void_t iproxy_event_in_event_cb(
+    ievent_buffer_event_t *bev, isshe_short_t what, isshe_void_t *ctx);
+static isshe_void_t iproxy_event_in_write_cb(
+    ievent_buffer_event_t *bev, isshe_void_t *ctx);
 
 static isshe_int_t
 iproxy_event_connect_to_next(
@@ -65,7 +74,7 @@ iproxy_connect_to_out(iproxy_session_t *session,
 isshe_int_t
 iproxy_event_in_transfer_data(iproxy_session_t *session)
 {
-    ievent_buffer_t             *buffer;
+    ievent_buffer_t             *src_buffer, *dst_buffer;
     isshe_log_t                 *log;
     ievent_buffer_event_t       *src_bev;
     ievent_buffer_event_t       *dst_bev;
@@ -86,19 +95,20 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
     conn = session->inconn;
     phdr = session->inhdr;
     header_len = sizeof(isout_protocol_header_t);
-    buffer = ievent_buffer_event_get_input(src_bev);
-    if (!buffer) {
-        isshe_log_error(log, "get input buffer failed");
+    src_buffer = ievent_buffer_event_get_input(src_bev);
+    dst_buffer = ievent_buffer_event_get_output(dst_bev);
+    if (!src_buffer || !dst_buffer) {
+        isshe_log_error(log, "get input/output buffer failed");
         return ISSHE_ERROR;
     }
 
-    while(ievent_buffer_get_length(buffer) > 0) {
+    while(ievent_buffer_get_length(src_buffer) > 0) {
         // 读头部
         if (conn->status == ISOUT_STATUS_UNKNOWN
         || conn->status == ISOUT_STATUS_READ_HDR) {
 
             conn->status = ISOUT_STATUS_READ_HDR;
-            bev_len = ievent_buffer_get_length(buffer);
+            bev_len = ievent_buffer_get_length(src_buffer);
             if (bev_len == 0 || bev_len < header_len) {
                 // 等待更多数据
                 return ISSHE_OK;
@@ -128,7 +138,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
 
         // 读选项
         if (conn->status == ISOUT_STATUS_READ_OPTS) {
-            bev_len = ievent_buffer_get_length(buffer);
+            bev_len = ievent_buffer_get_length(src_buffer);
             if (bev_len == 0 || bev_len < header.opts_len) {
                 // 等待更多数据
                 return ISSHE_OK;
@@ -166,7 +176,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
 
         // 读数据
         if (conn->status == ISOUT_STATUS_READ_DATA) {
-            bev_len = ievent_buffer_get_length(buffer);
+            bev_len = ievent_buffer_get_length(src_buffer);
             if (bev_len == 0 || bev_len < header.data_len) {
                 // 等待更多数据
                 return ISSHE_OK;
@@ -192,6 +202,18 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
             conn->status = ISOUT_STATUS_READ_HDR;
             //isshe_memzero(phdr, header_len);  // 用完清零
             session->inbytes += header.data_len;
+
+            if (ievent_buffer_get_length(dst_buffer) >= IEVENT_OUTPUT_BUFFER_MAX) {
+                // 太多数据积压了，停止读
+                ievent_buffer_event_setcb(dst_bev,
+                    iproxy_event_out_read_cb,
+                    iproxy_event_out_write_cb,
+                    iproxy_event_out_event_cb, (isshe_void_t *)session);
+                ievent_buffer_event_water_mark_set(dst_bev, IEVENT_WRITE,
+                    IEVENT_OUTPUT_BUFFER_MAX/2, IEVENT_OUTPUT_BUFFER_MAX);
+                ievent_buffer_event_disable(src_bev, IEVENT_READ);
+                break; // TODO 考虑这个while，准备去掉
+            }
         }
     }
 
@@ -200,7 +222,7 @@ iproxy_event_in_transfer_data(iproxy_session_t *session)
 }
 
 
-void iproxy_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
+isshe_void_t iproxy_event_in_read_cb(ievent_buffer_event_t *bev, isshe_void_t *ctx)
 {
     iproxy_session_t    *session = (iproxy_session_t *)ctx;
 
@@ -223,21 +245,22 @@ iproxy_event_out_transfer_data(iproxy_session_t *session)
     isshe_log_t                 *log;
     ievent_buffer_event_t       *src_bev;
     ievent_buffer_event_t       *dst_bev;
-    ievent_buffer_t             *buffer;
+    ievent_buffer_t             *src_buffer, *dst_buffer;
 
     log = session->config->log;
     src_bev = session->outbev;
     dst_bev = session->inbev;
 
-    buffer = ievent_buffer_event_get_input(src_bev);
-    if (!buffer) {
-        isshe_log_error(log, "get input buffer failed");
+    src_buffer = ievent_buffer_event_get_input(src_bev);
+    dst_buffer = ievent_buffer_event_get_output(dst_bev);
+    if (!src_buffer || !dst_buffer) {
+        isshe_log_error(log, "get input src_buffer failed");
         return ISSHE_ERROR;
     }
 
-    while(ievent_buffer_get_length(buffer) > 0) {
+    while(ievent_buffer_get_length(src_buffer) > 0) {
         // 获取数据长度
-        data_len = ievent_buffer_get_length(buffer);
+        data_len = ievent_buffer_get_length(src_buffer);
         /*
         if (data_len <= 0) {
             return ISSHE_OK;
@@ -285,13 +308,26 @@ iproxy_event_out_transfer_data(iproxy_session_t *session)
         ievent_buffer_event_write(dst_bev, data, data_len);
         session->outbytes += data_len;
         isshe_log_error(log, "---isshe---iproxy_event_out_transfer_data---");
+
+        if (ievent_buffer_get_length(dst_buffer) >= IEVENT_OUTPUT_BUFFER_MAX) {
+            // 太多数据积压了，停止读
+            ievent_buffer_event_setcb(dst_bev,
+                iproxy_event_in_read_cb,
+                iproxy_event_in_write_cb,
+                iproxy_event_in_event_cb, (isshe_void_t *)session);
+            ievent_buffer_event_water_mark_set(dst_bev, IEVENT_WRITE,
+                IEVENT_OUTPUT_BUFFER_MAX/2, IEVENT_OUTPUT_BUFFER_MAX);
+            ievent_buffer_event_disable(src_bev, IEVENT_READ);
+            break; // TODO 考虑这个while，准备去掉
+        }
     }
 
     return ISSHE_OK;
 }
 
 
-static void iproxy_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
+static isshe_void_t
+iproxy_event_out_read_cb(ievent_buffer_event_t *bev, isshe_void_t *ctx)
 {
     iproxy_session_t *session = (iproxy_session_t *)ctx;
 
@@ -303,9 +339,43 @@ static void iproxy_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
     }
 }
 
+static isshe_void_t
+iproxy_event_in_write_cb(ievent_buffer_event_t *bev, isshe_void_t *ctx)
+{
+    iproxy_session_t *session = (iproxy_session_t *)ctx;
+    ievent_buffer_event_t *partner;
 
-void iproxy_event_in_event_cb(
-    ievent_buffer_event_t *bev, short what, void *ctx)
+    partner = session->outbev;
+
+    ievent_buffer_event_setcb(bev, 
+        iproxy_event_in_read_cb, NULL,
+        iproxy_event_in_event_cb, ctx);
+    ievent_buffer_event_water_mark_set(bev, IEVENT_WRITE, 0, 0);
+    if (partner) {
+        ievent_buffer_event_enable(partner, IEVENT_READ);
+    }
+}
+
+static isshe_void_t
+iproxy_event_out_write_cb(ievent_buffer_event_t *bev, isshe_void_t *ctx)
+{
+    iproxy_session_t *session = (iproxy_session_t *)ctx;
+    ievent_buffer_event_t *partner;
+
+    partner = session->inbev;
+
+    ievent_buffer_event_setcb(bev, 
+        iproxy_event_out_read_cb, NULL,
+        iproxy_event_out_event_cb, ctx);
+    ievent_buffer_event_water_mark_set(bev, IEVENT_WRITE, 0, 0);
+    if (partner) {
+        ievent_buffer_event_enable(partner, IEVENT_READ);
+    }
+}
+
+
+isshe_void_t iproxy_event_in_event_cb(
+    ievent_buffer_event_t *bev, isshe_short_t what, isshe_void_t *ctx)
 {
     iproxy_session_t        *session = (iproxy_session_t *)ctx;
     isshe_log_t             *log;
@@ -341,8 +411,8 @@ void iproxy_event_in_event_cb(
     }
 }
 
-static void iproxy_event_out_event_cb(
-    ievent_buffer_event_t *bev, short what, void *ctx)
+static isshe_void_t iproxy_event_out_event_cb(
+    ievent_buffer_event_t *bev, isshe_short_t what, isshe_void_t *ctx)
 {
     iproxy_session_t        *session = (iproxy_session_t *)ctx;
     isshe_log_t             *log;
@@ -380,10 +450,10 @@ static void iproxy_event_out_event_cb(
 }
 
 
-void
+isshe_void_t
 iproxy_event_accept_cb(ievent_conn_listener_t *listener, 
     isshe_fd_t fd, isshe_sa_t *sockaddr,
-    int socklen, void *data)
+    int socklen, isshe_void_t *data)
 {
     iproxy_config_t     *config;
     isshe_mempool_t     *mempool = NULL;
@@ -454,17 +524,17 @@ iproxy_event_accept_cb(ievent_conn_listener_t *listener,
     session->config = config;
     session->inconn->fd = fd;
     session->inconn->status = ISOUT_STATUS_UNKNOWN;
-    session->inconn->data = (void *)session;
+    session->inconn->data = (isshe_void_t *)session;
     session->inconn->mempool = mempool;
     session->outconn->mempool = mempool;
-    session->outconn->data = (void *)session;
+    session->outconn->data = (isshe_void_t *)session;
 
     ievent_buffer_event_setcb(session->inbev, iproxy_event_in_read_cb, 
-        NULL, iproxy_event_in_event_cb, (void*)session);
+        NULL, iproxy_event_in_event_cb, (isshe_void_t*)session);
     ievent_buffer_event_enable(session->inbev, EV_READ|EV_WRITE);
 
     ievent_buffer_event_setcb(session->outbev, iproxy_event_out_read_cb, 
-        NULL, iproxy_event_out_event_cb, (void*)session);
+        NULL, iproxy_event_out_event_cb, (isshe_void_t*)session);
     ievent_buffer_event_enable(session->outbev, EV_READ|EV_WRITE);
 
     return;
