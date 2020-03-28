@@ -307,7 +307,7 @@ iproxy_event_out_transfer_data(iproxy_session_t *session)
         ievent_buffer_event_write(dst_bev, stropts, opts_len);
         ievent_buffer_event_write(dst_bev, data, data_len);
         session->outbytes += data_len;
-        isshe_log_error(log, "---isshe---iproxy_event_out_transfer_data---");
+        isshe_log_debug(log, "---isshe----outbytes = %ud", session->outbytes);
 
         if (ievent_buffer_get_length(dst_buffer) >= IEVENT_OUTPUT_BUFFER_MAX) {
             // 太多数据积压了，停止读
