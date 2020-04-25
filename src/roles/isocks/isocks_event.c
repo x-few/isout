@@ -1,6 +1,19 @@
 #include "isocks.h"
 
 
+static isshe_void_t
+isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx);
+static isshe_void_t
+isocks_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx);
+static isshe_void_t
+isocks_event_in_write_cb(ievent_buffer_event_t *bev, isshe_void_t *ctx);
+static isshe_void_t
+isocks_event_out_write_cb(ievent_buffer_event_t *bev, isshe_void_t *ctx);
+static isshe_void_t
+isocks_event_in_event_cb(ievent_buffer_event_t *bev, short what, void *ctx);
+static isshe_void_t
+isocks_event_out_event_cb(ievent_buffer_event_t *bev, short what, void *ctx);
+
 isshe_int_t
 isocks_event_in_transfer_data(isocks_session_t *session)
 {
@@ -13,20 +26,21 @@ isocks_event_in_transfer_data(isocks_session_t *session)
     isshe_log_t                 *log;
     ievent_buffer_event_t       *src_bev;
     ievent_buffer_event_t       *dst_bev;
-    ievent_buffer_t             *buffer;
+    ievent_buffer_t             *src_buffer, *dst_buffer;
 
     log = session->config->log;
     src_bev = session->inbev;
     dst_bev = session->outbev;
-    buffer = ievent_buffer_event_get_input(src_bev);
-    if (!buffer) {
-        isshe_log_error(log, "get input buffer failed");
+    src_buffer = ievent_buffer_event_get_input(src_bev);
+    dst_buffer = ievent_buffer_event_get_output(dst_bev);
+    if (!src_buffer || !dst_buffer) {
+        isshe_log_error(log, "get input/output buffer failed");
         return ISSHE_ERROR;
     }
 
-    while(ievent_buffer_get_length(buffer) > 0) {
+    while(ievent_buffer_get_length(src_buffer) > 0) {
         // 获取数据长度
-        data_len = ievent_buffer_get_length(buffer);
+        data_len = ievent_buffer_get_length(src_buffer);
         //if (data_len <= 0) {
         //    return ISSHE_OK;
         //}
@@ -76,13 +90,25 @@ isocks_event_in_transfer_data(isocks_session_t *session)
         // 转发头部、选项、数据
         isshe_log_debug(log,
             "in(%p) -> out(%p): header len: %d, options len: %d, data len = %d",
-            session->inbev, session->outbev, sizeof(header), opts_len, data_len);
+            src_bev, dst_bev, sizeof(header), opts_len, data_len);
 
-        ievent_buffer_event_write(session->outbev, &header, sizeof(header));
-        ievent_buffer_event_write(session->outbev, stropts, opts_len);
-        ievent_buffer_event_write(session->outbev, data, data_len);
+        ievent_buffer_event_write(dst_bev, &header, sizeof(header));
+        ievent_buffer_event_write(dst_bev, stropts, opts_len);
+        ievent_buffer_event_write(dst_bev, data, data_len);
 
         session->inbytes += data_len;
+
+        if (ievent_buffer_get_length(dst_buffer) >= IEVENT_OUTPUT_BUFFER_MAX) {
+            // 太多数据积压了，停止读
+            ievent_buffer_event_setcb(dst_bev,
+                isocks_event_out_read_cb,
+                isocks_event_out_write_cb,
+                isocks_event_out_event_cb, (isshe_void_t *)session);
+            ievent_buffer_event_water_mark_set(dst_bev, IEVENT_WRITE,
+                IEVENT_OUTPUT_BUFFER_MAX/2, IEVENT_OUTPUT_BUFFER_MAX);
+            ievent_buffer_event_disable(src_bev, IEVENT_READ);
+            break; // TODO 考虑这个while，准备去掉
+        }
     }
 
 
@@ -99,7 +125,7 @@ isocks_event_in_td_error:
 isshe_int_t
 isocks_event_out_transfer_data(isocks_session_t *session)
 {
-    ievent_buffer_t             *buffer;
+    ievent_buffer_t             *src_buffer, *dst_buffer;
     isshe_log_t                 *log;
     ievent_buffer_event_t       *src_bev;
     ievent_buffer_event_t       *dst_bev;
@@ -120,19 +146,20 @@ isocks_event_out_transfer_data(isocks_session_t *session)
     conn = session->outconn;
     phdr = session->outhdr;
     header_len = sizeof(isout_protocol_header_t);
-    buffer = ievent_buffer_event_get_input(src_bev);
-    if (!buffer) {
-        isshe_log_error(log, "ievent_buffer_event_get_input failed");
+    src_buffer = ievent_buffer_event_get_input(src_bev);
+    dst_buffer = ievent_buffer_event_get_output(dst_bev);
+    if (!src_buffer || !dst_buffer) {
+        isshe_log_error(log, "get input/output buffer failed");
         return ISSHE_ERROR;
     }
 
-    while(ievent_buffer_get_length(buffer) > 0) {
+    while(ievent_buffer_get_length(src_buffer) > 0) {
         // 读头部
         if (conn->status == ISOUT_STATUS_UNKNOWN
         || conn->status == ISOUT_STATUS_READ_HDR) {
 
             conn->status = ISOUT_STATUS_READ_HDR;
-            bev_len = ievent_buffer_get_length(buffer);
+            bev_len = ievent_buffer_get_length(src_buffer);
             if (bev_len == 0 || bev_len < header_len) {
                 // 等待更多数据
                 return ISSHE_OK;
@@ -161,7 +188,7 @@ isocks_event_out_transfer_data(isocks_session_t *session)
 
         // 读选项
         if (conn->status == ISOUT_STATUS_READ_OPTS) {
-            bev_len = ievent_buffer_get_length(buffer);
+            bev_len = ievent_buffer_get_length(src_buffer);
             if (bev_len == 0 || bev_len < header.opts_len) {
                 // 等待更多数据
                 return ISSHE_OK;
@@ -192,7 +219,7 @@ isocks_event_out_transfer_data(isocks_session_t *session)
 
         // 读数据
         if (conn->status == ISOUT_STATUS_READ_DATA) {
-            bev_len = ievent_buffer_get_length(buffer);
+            bev_len = ievent_buffer_get_length(src_buffer);
             if (bev_len == 0 || bev_len < header.data_len) {
                 // 等待更多数据
                 return ISSHE_OK;
@@ -219,7 +246,18 @@ isocks_event_out_transfer_data(isocks_session_t *session)
             conn->status = ISOUT_STATUS_READ_HDR;
             //isshe_memzero(phdr, header_len);  // 用完清零
             session->outbytes += header.data_len;
-            isshe_log_debug(log, "---isshe---isocks_event_out_transfer_data---outbytes = %ud", session->outbytes);
+        }
+
+        if (ievent_buffer_get_length(dst_buffer) >= IEVENT_OUTPUT_BUFFER_MAX) {
+            // 太多数据积压了，停止读
+            ievent_buffer_event_setcb(dst_bev,
+                isocks_event_in_read_cb,
+                isocks_event_in_write_cb,
+                isocks_event_in_event_cb, (isshe_void_t *)session);
+            ievent_buffer_event_water_mark_set(dst_bev, IEVENT_WRITE,
+                IEVENT_OUTPUT_BUFFER_MAX/2, IEVENT_OUTPUT_BUFFER_MAX);
+            ievent_buffer_event_disable(src_bev, IEVENT_READ);
+            break;
         }
     }
 
@@ -296,7 +334,7 @@ isocks_socks_handshake(
     return ISSHE_OK;
 }
 
-void
+static isshe_void_t
 isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
     isocks_session_t    *session = (isocks_session_t *)ctx;
@@ -330,7 +368,8 @@ isocks_event_in_read_cb(ievent_buffer_event_t *bev, void *ctx)
 }
 
 
-void isocks_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
+static isshe_void_t
+isocks_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
 {
     isocks_session_t *session = (isocks_session_t *)ctx;
 
@@ -342,9 +381,43 @@ void isocks_event_out_read_cb(ievent_buffer_event_t *bev, void *ctx)
     }
 }
 
+static isshe_void_t
+isocks_event_out_write_cb(ievent_buffer_event_t *bev, isshe_void_t *ctx)
+{
+    isocks_session_t *session = (isocks_session_t *)ctx;
+    ievent_buffer_event_t *partner;
 
-void isocks_event_in_event_cb(
-    ievent_buffer_event_t *bev, short what, void *ctx)
+    partner = session->inbev;
+
+    ievent_buffer_event_setcb(bev,
+        isocks_event_out_read_cb, NULL,
+        isocks_event_out_event_cb, ctx);
+    ievent_buffer_event_water_mark_set(bev, IEVENT_WRITE, 0, 0);
+    if (partner) {
+        ievent_buffer_event_enable(partner, IEVENT_READ);
+    }
+}
+
+static isshe_void_t
+isocks_event_in_write_cb(ievent_buffer_event_t *bev, isshe_void_t *ctx)
+{
+    isocks_session_t *session = (isocks_session_t *)ctx;
+    ievent_buffer_event_t *partner;
+
+    partner = session->outbev;
+
+    ievent_buffer_event_setcb(bev,
+        isocks_event_in_read_cb, NULL,
+        isocks_event_in_event_cb, ctx);
+    ievent_buffer_event_water_mark_set(bev, IEVENT_WRITE, 0, 0);
+    if (partner) {
+        ievent_buffer_event_enable(partner, IEVENT_READ);
+    }
+}
+
+
+static isshe_void_t
+isocks_event_in_event_cb(ievent_buffer_event_t *bev, short what, void *ctx)
 {
     isocks_session_t        *session = (isocks_session_t *)ctx;
     isshe_log_t             *log;
@@ -380,8 +453,8 @@ void isocks_event_in_event_cb(
     }
 }
 
-void isocks_event_out_event_cb(
-    ievent_buffer_event_t *bev, short what, void *ctx)
+static isshe_void_t
+isocks_event_out_event_cb(ievent_buffer_event_t *bev, short what, void *ctx)
 {
     isocks_session_t        *session = (isocks_session_t *)ctx;
     isshe_log_t             *log;

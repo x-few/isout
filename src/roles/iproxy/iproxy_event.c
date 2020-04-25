@@ -364,7 +364,7 @@ iproxy_event_out_write_cb(ievent_buffer_event_t *bev, isshe_void_t *ctx)
 
     partner = session->inbev;
 
-    ievent_buffer_event_setcb(bev, 
+    ievent_buffer_event_setcb(bev,
         iproxy_event_out_read_cb, NULL,
         iproxy_event_out_event_cb, ctx);
     ievent_buffer_event_water_mark_set(bev, IEVENT_WRITE, 0, 0);
